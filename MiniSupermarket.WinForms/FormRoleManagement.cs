@@ -1,164 +1,141 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace MiniSupermarket.WinForms
-{
-    public partial class FormRoleManagement : Form
-    {
-        private static readonly HttpClient _client = new HttpClient
-        {
-            BaseAddress = new Uri("https://localhost:7299/api/")
-        };
-
-        public FormRoleManagement()
-        {
+namespace MiniSupermarket.WinForms {
+    public partial class FormRoleManagement : Form {
+        
+        public FormRoleManagement() {
             InitializeComponent();
         }
 
-        private async void FormRoleManagement_Load(object sender, EventArgs e)
-        {
+        private HttpClient GetAuthenticatedClient() {
+            var client = new HttpClient {
+                BaseAddress = new Uri("https://localhost:7299/api/")
+            };
+            if (!string.IsNullOrEmpty(SessionManager.JwtToken)) {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", SessionManager.JwtToken);
+            }
+            return client;
+        }
+
+        private async void FormRoleManagement_Load(object sender, EventArgs e) {
             await LoadDataAsync();
         }
 
-        private async Task LoadDataAsync()
-        {
-            try
-            {
-                var roles = await _client.GetFromJsonAsync<List<RoleDto>>("roles");
+        private async Task LoadDataAsync() {
+            try {
+                using var client = GetAuthenticatedClient();
+                var roles = await client.GetFromJsonAsync<List<RoleDto>>("roles");
                 dgvRoles.DataSource = roles;
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 MessageBox.Show("Lỗi kết nối Server: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private async void btnLoad_Click(object sender, EventArgs e)
-        {
+        private async void btnLoad_Click(object sender, EventArgs e) {
             await LoadDataAsync();
         }
 
-        private void dgvRoles_CellClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex >= 0)
-            {
+        private void dgvRoles_CellClick(object sender, DataGridViewCellEventArgs e) {
+            if (e.RowIndex >= 0) {
                 DataGridViewRow row = dgvRoles.Rows[e.RowIndex];
-                txtId.Text = row.Cells["RoleId"].Value?.ToString();
-                txtRoleName.Text = row.Cells["RoleName"].Value?.ToString();
-                txtDescription.Text = row.Cells["Description"].Value?.ToString() ?? string.Empty;
+                txtId.Text = row.Cells["RoleId"].Value.ToString();
+                txtRoleName.Text = row.Cells["RoleName"].Value.ToString();
+                txtDescription.Text = row.Cells["Description"]?.Value?.ToString() ?? string.Empty;
             }
         }
 
-        private async void btnAdd_Click(object sender, EventArgs e)
-        {
-            var newRole = new
-            {
-                RoleName = txtRoleName.Text,
-                Description = txtDescription.Text
+        private async void btnAdd_Click(object sender, EventArgs e) {
+            var newRole = new { 
+                RoleName = txtRoleName.Text, 
+                Description = txtDescription.Text 
             };
 
-            var response = await _client.PostAsJsonAsync("roles", newRole);
-            if (response.IsSuccessStatusCode)
-            {
+            using var client = GetAuthenticatedClient();
+            var response = await client.PostAsJsonAsync("roles", newRole);
+            if (response.IsSuccessStatusCode) {
                 MessageBox.Show("Thêm mới thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 await LoadDataAsync();
                 ClearInputs();
-            }
-            else
-            {
+            } else {
                 MessageBox.Show("Thêm mới thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
-        private async void btnUpdate_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrEmpty(txtId.Text))
-            {
+        private async void btnUpdate_Click(object sender, EventArgs e) {
+            if (string.IsNullOrEmpty(txtId.Text)) {
                 MessageBox.Show("Vui lòng chọn chức vụ cần sửa!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             int id = int.Parse(txtId.Text);
-            var updateRole = new
-            {
-                RoleId = id,
-                RoleName = txtRoleName.Text,
-                Description = txtDescription.Text
+            var updateRole = new { 
+                RoleId = id, 
+                RoleName = txtRoleName.Text, 
+                Description = txtDescription.Text 
             };
 
-            var response = await _client.PutAsJsonAsync($"roles/{id}", updateRole);
-            if (response.IsSuccessStatusCode)
-            {
+            using var client = GetAuthenticatedClient();
+            var response = await client.PutAsJsonAsync($"roles/{id}", updateRole);
+            if (response.IsSuccessStatusCode) {
                 MessageBox.Show("Cập nhật thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 await LoadDataAsync();
                 ClearInputs();
-            }
-            else
-            {
+            } else {
                 MessageBox.Show("Cập nhật thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
-        private async void btnDelete_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrEmpty(txtId.Text))
-            {
+        private async void btnDelete_Click(object sender, EventArgs e) {
+            if (string.IsNullOrEmpty(txtId.Text)) {
                 MessageBox.Show("Vui lòng chọn chức vụ cần xóa!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             int id = int.Parse(txtId.Text);
             var confirm = MessageBox.Show($"Bạn có chắc muốn xóa chức vụ ID = {id}?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            if (confirm == DialogResult.Yes)
-            {
-                var response = await _client.DeleteAsync($"roles/{id}");
-                if (response.IsSuccessStatusCode)
-                {
+            if (confirm == DialogResult.Yes) {
+                using var client = GetAuthenticatedClient();
+                var response = await client.DeleteAsync($"roles/{id}");
+                if (response.IsSuccessStatusCode) {
                     MessageBox.Show("Xóa thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     await LoadDataAsync();
                     ClearInputs();
-                }
-                else
-                {
+                } else {
                     MessageBox.Show("Xóa thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }
             }
         }
 
-        private async void btnSearch_Click(object sender, EventArgs e)
-        {
+        private async void btnSearch_Click(object sender, EventArgs e) {
             string keyword = txtKeyword.Text.Trim();
-            if (string.IsNullOrEmpty(keyword))
-            {
+            if (string.IsNullOrEmpty(keyword)) {
                 await LoadDataAsync();
                 return;
             }
 
-            try
-            {
-                var result = await _client.GetFromJsonAsync<List<RoleDto>>($"roles/search?keyword={keyword}");
+            try {
+                using var client = GetAuthenticatedClient();
+                var result = await client.GetFromJsonAsync<List<RoleDto>>($"roles/search?keyword={keyword}");
                 dgvRoles.DataSource = result;
-            }
-            catch (Exception)
-            {
+            } catch (Exception) {
                 MessageBox.Show("Không tìm thấy kết quả phù hợp!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
-        private void ClearInputs()
-        {
+        private void ClearInputs() {
             txtId.Text = "";
             txtRoleName.Text = "";
             txtDescription.Text = "";
         }
     }
 
-    public class RoleDto
-    {
+    public class RoleDto {
         public int RoleId { get; set; }
         public string RoleName { get; set; } = string.Empty;
         public string? Description { get; set; }
