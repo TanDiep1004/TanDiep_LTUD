@@ -20,6 +20,11 @@ Dự án được chia làm 2 phân hệ (Projects) hoạt động độc lập 
 - **Quản lý Nhóm hàng (Categories):** Thêm, sửa, xóa, lấy danh sách, và tìm kiếm nhóm hàng hóa.
 - **Quản lý Chức vụ (Roles):** Thêm, sửa, xóa, lấy danh sách, và tìm kiếm chức vụ nhân sự (Admin, Manager, Cashier,...).
 
+## 🔒 Bảo mật & Xác thực (Buổi 2)
+- **Xác thực JWT (JSON Web Token):** Tích hợp đăng nhập tại Backend cấp phát thẻ bài (Token) và Client lưu trữ `SessionManager`.
+- **Phân quyền người dùng (Authorization):** Khóa chặt toàn bộ API và giao diện bằng thuộc tính `[Authorize]`, giới hạn quyền truy cập chuyên biệt cho `Admin` và `Cashier`.
+- **Giao diện Đăng nhập:** Hoàn thiện `FormLogin` làm màn hình khởi chạy đầu tiên, tự động gắn kèm `Bearer Token` vào mọi giao dịch HTTP từ Client tới Server.
+
 ## 🛠 Cách cài đặt và chạy ứng dụng
 
 1. **Yêu cầu hệ thống:** 
