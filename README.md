@@ -37,4 +37,8 @@ Dự án được chia làm 2 phân hệ (Projects) hoạt động độc lập 
 *(Lưu ý: Không tắt cửa sổ Console màu đen của API Server trong quá trình sử dụng phần mềm WinForms).*
 
 ---
-*Dự án được phát triển trong khuôn khổ môn học LTUD.*
+
+## 👨‍💻 5. Tác giả
+- **Họ tên sinh viên:** Nguyễn Tấn Điệp
+- **Mã sinh viên:** 2123110145
+- **Lớp học phần:** CCQ2411C
