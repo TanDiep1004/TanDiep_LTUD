@@ -52,6 +52,7 @@ namespace MiniSupermarket.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")] // Chỉ Admin mới có quyền cập nhật nhóm hàng/sản phẩm, Cashier bị chặn
         public IActionResult UpdateCategory(int id, Category category)
         {
             var existingCategory = _categories.FirstOrDefault(c => c.CategoryId == id);
