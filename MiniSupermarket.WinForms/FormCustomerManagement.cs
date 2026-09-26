@@ -37,6 +37,7 @@ namespace MiniSupermarket.WinForms {
                 using var client = GetAuthenticatedClient();
                 var customers = await client.GetFromJsonAsync<List<Customer>>("customers");
                 dgvCustomers.DataSource = customers;
+                FormatCustomerGrid();
             } catch (Exception ex) {
                 MessageBox.Show("Lỗi tải danh sách khách hàng: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -167,8 +168,46 @@ namespace MiniSupermarket.WinForms {
                 using var client = GetAuthenticatedClient();
                 var result = await client.GetFromJsonAsync<List<Customer>>($"customers/search?keyword={Uri.EscapeDataString(keyword)}");
                 dgvCustomers.DataSource = result;
+                FormatCustomerGrid();
             } catch (Exception) {
                 MessageBox.Show("Không tìm thấy kết quả phù hợp!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void FormatCustomerGrid() {
+            if (dgvCustomers.Columns.Count == 0) return;
+
+            if (dgvCustomers.Columns["CustomerId"] is DataGridViewColumn colId) {
+                colId.HeaderText = "Mã KH";
+                colId.FillWeight = 50;
+                colId.MinimumWidth = 50;
+            }
+            if (dgvCustomers.Columns["CustomerName"] is DataGridViewColumn colName) {
+                colName.HeaderText = "Tên Khách Hàng";
+                colName.FillWeight = 150;
+                colName.MinimumWidth = 140;
+            }
+            if (dgvCustomers.Columns["PhoneNumber"] is DataGridViewColumn colPhone) {
+                colPhone.HeaderText = "Số Điện Thoại";
+                colPhone.FillWeight = 95;
+                colPhone.MinimumWidth = 90;
+            }
+            if (dgvCustomers.Columns["Address"] is DataGridViewColumn colAddress) {
+                colAddress.HeaderText = "Địa Chỉ";
+                colAddress.FillWeight = 120;
+                colAddress.MinimumWidth = 100;
+            }
+            if (dgvCustomers.Columns["RewardPoints"] is DataGridViewColumn colPoints) {
+                colPoints.HeaderText = "Điểm Tích Lũy";
+                colPoints.FillWeight = 65;
+                colPoints.MinimumWidth = 60;
+                colPoints.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
+            }
+            if (dgvCustomers.Columns["MembershipRank"] is DataGridViewColumn colRank) {
+                colRank.HeaderText = "Hạng Thẻ";
+                colRank.FillWeight = 65;
+                colRank.MinimumWidth = 60;
+                colRank.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             }
         }
 
