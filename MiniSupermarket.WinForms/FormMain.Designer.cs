@@ -17,10 +17,11 @@ namespace MiniSupermarket.WinForms
         {
             this.btnManageCategories = new System.Windows.Forms.Button();
             this.btnManageRoles = new System.Windows.Forms.Button();
+            this.btnManageCustomers = new System.Windows.Forms.Button();
             this.SuspendLayout();
             
             // btnManageCategories
-            this.btnManageCategories.Location = new System.Drawing.Point(50, 50);
+            this.btnManageCategories.Location = new System.Drawing.Point(50, 30);
             this.btnManageCategories.Name = "btnManageCategories";
             this.btnManageCategories.Size = new System.Drawing.Size(200, 50);
             this.btnManageCategories.TabIndex = 0;
@@ -29,26 +30,38 @@ namespace MiniSupermarket.WinForms
             this.btnManageCategories.Click += new System.EventHandler(this.btnManageCategories_Click);
             
             // btnManageRoles
-            this.btnManageRoles.Location = new System.Drawing.Point(50, 120);
+            this.btnManageRoles.Location = new System.Drawing.Point(50, 95);
             this.btnManageRoles.Name = "btnManageRoles";
             this.btnManageRoles.Size = new System.Drawing.Size(200, 50);
             this.btnManageRoles.TabIndex = 1;
             this.btnManageRoles.Text = "Quản lý Chức vụ";
             this.btnManageRoles.UseVisualStyleBackColor = true;
             this.btnManageRoles.Click += new System.EventHandler(this.btnManageRoles_Click);
+
+            // btnManageCustomers
+            this.btnManageCustomers.Location = new System.Drawing.Point(50, 160);
+            this.btnManageCustomers.Name = "btnManageCustomers";
+            this.btnManageCustomers.Size = new System.Drawing.Size(200, 50);
+            this.btnManageCustomers.TabIndex = 2;
+            this.btnManageCustomers.Text = "Quản lý Khách hàng";
+            this.btnManageCustomers.UseVisualStyleBackColor = true;
+            this.btnManageCustomers.Click += new System.EventHandler(this.btnManageCustomers_Click);
             
             // FormMain
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(300, 220);
+            this.ClientSize = new System.Drawing.Size(300, 240);
+            this.Controls.Add(this.btnManageCustomers);
             this.Controls.Add(this.btnManageRoles);
             this.Controls.Add(this.btnManageCategories);
             this.Name = "FormMain";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Menu Chính";
             this.ResumeLayout(false);
         }
 
         private System.Windows.Forms.Button btnManageCategories;
         private System.Windows.Forms.Button btnManageRoles;
+        private System.Windows.Forms.Button btnManageCustomers;
     }
 }

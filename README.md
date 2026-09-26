@@ -25,6 +25,15 @@ Dự án được chia làm 2 phân hệ (Projects) hoạt động độc lập 
 - **Phân quyền người dùng (Authorization):** Khóa chặt toàn bộ API và giao diện bằng thuộc tính `[Authorize]`, giới hạn quyền truy cập chuyên biệt cho `Admin` và `Cashier`.
 - **Giao diện Đăng nhập:** Hoàn thiện `FormLogin` làm màn hình khởi chạy đầu tiên, tự động gắn kèm `Bearer Token` vào mọi giao dịch HTTP từ Client tới Server.
 
+## 💾 Tích hợp SQL Server & EF Core Code-First (Buổi 3)
+- **Hệ quản trị CSDL:** Chuyển đổi toàn diện từ In-Memory sang Microsoft SQL Server thực tế (`MiniSupermarketDb`).
+- **Entity Framework Core (EF Core 9.0):**
+  - Định nghĩa thực thể: `Categories` (quan hệ 1 - N với Products), `Products` (khóa ngoại CategoryId), `Customers` (khách hàng thân thiết).
+  - Ngữ cảnh dữ liệu: `SupermarketDbContext` kết nối chuỗi `DefaultConnection` và nạp sẵn dữ liệu mồi (Data Seeding).
+  - Quản lý cấu trúc bảng bằng EF Core Migrations (`InitialCreateDatabase`).
+- **Tái cấu trúc Backend API:** Sử dụng thuần thục cơ chế bất đồng bộ `async`/`await` và LINQ (`ToListAsync`, `FindAsync`, `SaveChangesAsync`).
+- **Mở rộng WinForms Client:** Bổ sung giao diện **Quản lý Khách hàng (`FormCustomerManagement`)**, kết nối đồng bộ dữ liệu vĩnh viễn trên SQL Server.
+
 ## 🛠 Cách cài đặt và chạy ứng dụng
 
 1. **Yêu cầu hệ thống:** 
