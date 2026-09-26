@@ -17,12 +17,15 @@ namespace MiniSupermarket.API.Controllers {
         // Endpoint Đăng nhập: POST /api/auth/login
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequestDto request) {
-            // Kiểm tra tài khoản mẫu
-            if (request.Username == "admin" && request.Password == "123456") {
-                var token = GenerateJwtToken(request.Username, "Admin");
+            // Kiểm tra tài khoản mẫu (không phân biệt chữ hoa/thường)
+            string user = request.Username?.Trim() ?? string.Empty;
+            string pass = request.Password?.Trim() ?? string.Empty;
+
+            if (string.Equals(user, "admin", StringComparison.OrdinalIgnoreCase) && pass == "123456") {
+                var token = GenerateJwtToken(user, "Admin");
                 return Ok(new { success = true, token = token, role = "Admin" });
-            } else if (request.Username == "cashier" && request.Password == "123456") {
-                var token = GenerateJwtToken(request.Username, "Cashier");
+            } else if (string.Equals(user, "cashier", StringComparison.OrdinalIgnoreCase) && pass == "123456") {
+                var token = GenerateJwtToken(user, "Cashier");
                 return Ok(new { success = true, token = token, role = "Cashier" });
             }
             return Unauthorized(new { success = false, message = "Sai tài khoản hoặc mật khẩu!" });

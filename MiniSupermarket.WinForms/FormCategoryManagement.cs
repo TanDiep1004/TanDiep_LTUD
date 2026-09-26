@@ -25,6 +25,11 @@ namespace MiniSupermarket.WinForms {
         }
 
         private async void FormCategoryManagement_Load(object sender, EventArgs e) {
+            // Phân quyền giao diện: Thu ngân (Cashier) không có quyền xóa sản phẩm/nhóm hàng
+            if (string.Equals(SessionManager.CurrentRole, "Cashier", StringComparison.OrdinalIgnoreCase)) {
+                btnDelete.Enabled = false;
+                btnDelete.Text = "Xóa (Chỉ Admin)";
+            }
             await LoadDataAsync();
         }
 
@@ -107,6 +112,8 @@ namespace MiniSupermarket.WinForms {
                     MessageBox.Show("Xóa thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     await LoadDataAsync();
                     ClearInputs();
+                } else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden) {
+                    MessageBox.Show("Bạn không có quyền xóa sản phẩm/nhóm hàng! Chức năng này chỉ dành cho Admin.", "Bị từ chối truy cập (403)", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 } else {
                     MessageBox.Show("Xóa thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 }

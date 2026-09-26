@@ -64,6 +64,7 @@ namespace MiniSupermarket.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")] // Chỉ Admin mới có quyền xóa sản phẩm/nhóm hàng, Cashier bị chặn
         public IActionResult DeleteCategory(int id)
         {
             var category = _categories.FirstOrDefault(c => c.CategoryId == id);
