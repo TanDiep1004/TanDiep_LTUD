@@ -3,11 +3,13 @@ using MiniSupermarket.API.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MiniSupermarket.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class RolesController : ControllerBase
     {
         private static readonly List<Role> _roles = new List<Role>

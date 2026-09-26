@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.ComponentModel.DataAnnotations;
 
 namespace MiniSupermarket.API.Controllers {
     [Route("api/[controller]")]
@@ -45,7 +46,10 @@ namespace MiniSupermarket.API.Controllers {
     }
 
     public class LoginRequestDto {
+        [Required(ErrorMessage = "Tài khoản không được để trống!")]
         public string Username { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mật khẩu không được để trống!")]
         public string Password { get; set; } = string.Empty;
     }
 }
