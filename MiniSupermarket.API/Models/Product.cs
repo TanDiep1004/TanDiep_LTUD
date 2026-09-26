@@ -24,6 +24,7 @@ namespace MiniSupermarket.API.Models {
         // Khóa ngoại liên kết tới bảng Categories
         public int CategoryId { get; set; }
         [ForeignKey("CategoryId")]
+        [System.Text.Json.Serialization.JsonIgnore]
         public virtual Category? Category { get; set; }
     }
 }

@@ -27,5 +27,11 @@ namespace MiniSupermarket.WinForms
             var form = new FormCustomerManagement();
             form.Show();
         }
+
+        private void btnManageProducts_Click(object sender, EventArgs e)
+        {
+            var form = new FormProductManagement();
+            form.Show();
+        }
     }
 }
