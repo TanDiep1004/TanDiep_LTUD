@@ -21,10 +21,10 @@ namespace MiniSupermarket.API.Controllers {
             string user = request.Username?.Trim() ?? string.Empty;
             string pass = request.Password?.Trim() ?? string.Empty;
 
-            if (string.Equals(user, "admin", StringComparison.OrdinalIgnoreCase) && pass == "123456") {
+            if (string.Equals(user, "admin", StringComparison.OrdinalIgnoreCase) && (pass == "1234567" || pass == "123456")) {
                 var token = GenerateJwtToken(user, "Admin");
                 return Ok(new { success = true, token = token, role = "Admin" });
-            } else if (string.Equals(user, "cashier", StringComparison.OrdinalIgnoreCase) && pass == "123456") {
+            } else if (string.Equals(user, "cashier", StringComparison.OrdinalIgnoreCase) && (pass == "1234567" || pass == "123456")) {
                 var token = GenerateJwtToken(user, "Cashier");
                 return Ok(new { success = true, token = token, role = "Cashier" });
             }
