@@ -14,13 +14,7 @@ namespace MiniSupermarket.WinForms {
         }
 
         private HttpClient GetAuthenticatedClient() {
-            var client = new HttpClient {
-                BaseAddress = new Uri("https://localhost:7299/api/")
-            };
-            if (!string.IsNullOrEmpty(SessionManager.JwtToken)) {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", SessionManager.JwtToken);
-            }
-            return client;
+            return ApiClientService.CreateClient();
         }
 
         private async void FormRoleManagement_Load(object sender, EventArgs e) {
@@ -44,8 +38,8 @@ namespace MiniSupermarket.WinForms {
         private void dgvRoles_CellClick(object sender, DataGridViewCellEventArgs e) {
             if (e.RowIndex >= 0) {
                 DataGridViewRow row = dgvRoles.Rows[e.RowIndex];
-                txtId.Text = row.Cells["RoleId"].Value.ToString();
-                txtRoleName.Text = row.Cells["RoleName"].Value.ToString();
+                txtId.Text = row.Cells["RoleId"].Value?.ToString() ?? string.Empty;
+                txtRoleName.Text = row.Cells["RoleName"].Value?.ToString() ?? string.Empty;
                 txtDescription.Text = row.Cells["Description"]?.Value?.ToString() ?? string.Empty;
             }
         }

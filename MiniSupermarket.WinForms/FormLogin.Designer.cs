@@ -35,7 +35,7 @@ namespace MiniSupermarket.WinForms
             this.groupBox1.Size = new System.Drawing.Size(300, 200);
             this.groupBox1.TabIndex = 0;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Đăng nhập";
+            this.groupBox1.Text = "Đăng nhập - Cô Ba Sài Gòn";
             
             // label1
             this.label1.AutoSize = true;
@@ -82,7 +82,7 @@ namespace MiniSupermarket.WinForms
             this.Controls.Add(this.groupBox1);
             this.Name = "FormLogin";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Đăng nhập hệ thống - FormLogin";
+            this.Text = "Đăng nhập hệ thống — Cửa hàng Cô Ba Sài Gòn";
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.ResumeLayout(false);

@@ -3,10 +3,8 @@ using System.Text.Json;
 
 namespace MiniSupermarket.WinForms {
     public partial class FormLogin : Form {
-        // Khởi tạo HttpClient trỏ đến địa chỉ của Web API Backend
-        private static readonly HttpClient _client = new HttpClient {
-            BaseAddress = new Uri("https://localhost:7299/api/")
-        };
+        // Sử dụng ApiClientService để kết nối an toàn với Web API Backend
+        private HttpClient GetClient() => ApiClientService.CreateClient();
 
         public FormLogin() {
             InitializeComponent();
@@ -26,24 +24,31 @@ namespace MiniSupermarket.WinForms {
             try {
                 // Đóng gói dữ liệu gửi lên endpoint POST /api/auth/login
                 var loginData = new { Username = username, Password = password };
-                var response = await _client.PostAsJsonAsync("auth/login", loginData);
+                using var client = GetClient();
+                var response = await client.PostAsJsonAsync("auth/login", loginData);
 
                 if (response.IsSuccessStatusCode) {
                     // Đọc chuỗi JSON trả về từ Server khi đăng nhập thành công
                     var jsonString = await response.Content.ReadAsStringAsync();
                     using var doc = JsonDocument.Parse(jsonString);
 
-                    // Trích xuất Token và Role lưu vào lớp tĩnh SessionManager dùng chung toàn ứng dụng
+                    // Trích xuất Token, Role và Thông tin nhân sự lưu vào SessionManager
                     SessionManager.JwtToken = doc.RootElement.GetProperty("token").GetString() ?? string.Empty;
                     SessionManager.CurrentRole = doc.RootElement.GetProperty("role").GetString() ?? string.Empty;
+                    SessionManager.CurrentUsername = username;
+                    if (doc.RootElement.TryGetProperty("fullName", out var fnProp)) {
+                        SessionManager.CurrentFullName = fnProp.GetString() ?? username;
+                    } else {
+                        SessionManager.CurrentFullName = username;
+                    }
 
                     MessageBox.Show($"Đăng nhập thành công với quyền: {SessionManager.CurrentRole}", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    // Mở Form quản lý chính (FormCategoryManagement) và ẩn Form đăng nhập đi
-                    FormMain mainForm = new FormMain();
+                    // Mở Form giao diện chính hiện đại (FormMainShell) và ẩn Form đăng nhập đi
+                    FormMainShell mainShell = new FormMainShell();
                     this.Hide();
-                    mainForm.ShowDialog();
-                    this.Close(); // Đóng hẳn ứng dụng khi form chính tắt
+                    mainShell.ShowDialog();
+                    this.Close(); // Đóng hẳn ứng dụng khi shell chính tắt
                 } else {
                     MessageBox.Show("Sai tài khoản hoặc mật khẩu!", "Đăng nhập thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
