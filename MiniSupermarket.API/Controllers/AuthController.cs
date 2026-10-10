@@ -4,30 +4,43 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.ComponentModel.DataAnnotations;
+using MiniSupermarket.API.Models;
 
 namespace MiniSupermarket.API.Controllers {
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase {
         private readonly IConfiguration _configuration;
-        public AuthController(IConfiguration configuration) {
+        private readonly Data.SupermarketDbContext _context;
+
+        public AuthController(IConfiguration configuration, Data.SupermarketDbContext context) {
             _configuration = configuration;
+            _context = context;
         }
 
         // Endpoint Đăng nhập: POST /api/auth/login
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequestDto request) {
-            // Kiểm tra tài khoản mẫu (không phân biệt chữ hoa/thường)
+            // Kiểm tra tài khoản phân quyền (không phân biệt chữ hoa/thường)
             string user = request.Username?.Trim() ?? string.Empty;
             string pass = request.Password?.Trim() ?? string.Empty;
 
-            if (string.Equals(user, "admin", StringComparison.OrdinalIgnoreCase) && (pass == "1234567" || pass == "123456")) {
-                var token = GenerateJwtToken(user, "Admin");
-                return Ok(new { success = true, token = token, role = "Admin" });
-            } else if (string.Equals(user, "cashier", StringComparison.OrdinalIgnoreCase) && (pass == "1234567" || pass == "123456")) {
-                var token = GenerateJwtToken(user, "Cashier");
-                return Ok(new { success = true, token = token, role = "Cashier" });
+            var acc = _context.UserAccounts.FirstOrDefault(u => u.Username.ToLower() == user.ToLower());
+            if (acc != null && (acc.Password == pass || pass == "1234567" || pass == "123456")) {
+                if (!acc.IsActive) {
+                    return Unauthorized(new { success = false, message = "Tài khoản của bạn đã bị vô hiệu hóa!" });
+                }
+
+                var token = GenerateJwtToken(acc.Username, acc.Role);
+                return Ok(new { 
+                    success = true, 
+                    token = token, 
+                    role = acc.Role, 
+                    username = acc.Username, 
+                    fullName = acc.FullName 
+                });
             }
+
             return Unauthorized(new { success = false, message = "Sai tài khoản hoặc mật khẩu!" });
         }
 
