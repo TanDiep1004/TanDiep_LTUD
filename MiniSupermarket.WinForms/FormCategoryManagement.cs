@@ -15,22 +15,15 @@ namespace MiniSupermarket.WinForms {
 
         // Bổ sung phương thức cấu hình HttpClient có gắn kèm Token bảo mật
         private HttpClient GetAuthenticatedClient() {
-            var client = new HttpClient {
-                BaseAddress = new Uri("https://localhost:7299/api/")
-            };
-            if (!string.IsNullOrEmpty(SessionManager.JwtToken)) {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", SessionManager.JwtToken);
-            }
-            return client;
+            return ApiClientService.CreateClient();
         }
 
         private async void FormCategoryManagement_Load(object sender, EventArgs e) {
-            // Phân quyền giao diện: Thu ngân (Cashier) không có quyền Cập nhật hoặc Xóa sản phẩm/nhóm hàng
+            // Phân quyền giao diện: Thu ngân (Cashier) không có quyền Thêm, Cập nhật hoặc Xóa nhóm hàng
             if (string.Equals(SessionManager.CurrentRole, "Cashier", StringComparison.OrdinalIgnoreCase)) {
-                btnDelete.Enabled = false;
-                btnDelete.Text = "Xóa (Chỉ Admin)";
+                btnAdd.Enabled = false;
                 btnUpdate.Enabled = false;
-                btnUpdate.Text = "Cập nhật (Chỉ Admin)";
+                btnDelete.Enabled = false;
             }
             await LoadDataAsync();
         }
@@ -40,8 +33,25 @@ namespace MiniSupermarket.WinForms {
                 using var client = GetAuthenticatedClient();
                 var categories = await client.GetFromJsonAsync<List<CategoryDto>>("categories");
                 dgvCategories.DataSource = categories;
+                FormatCategoryGrid();
             } catch (Exception ex) {
                 MessageBox.Show("Lỗi kết nối Server: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void FormatCategoryGrid() {
+            if (dgvCategories.Columns.Count == 0) return;
+            if (dgvCategories.Columns["CategoryId"] is DataGridViewColumn colId) {
+                colId.HeaderText = "CategoryId";
+                colId.Width = 90;
+            }
+            if (dgvCategories.Columns["CategoryName"] is DataGridViewColumn colName) {
+                colName.HeaderText = "CategoryName";
+                colName.Width = 190;
+            }
+            if (dgvCategories.Columns["Description"] is DataGridViewColumn colDesc) {
+                colDesc.HeaderText = "Description";
+                colDesc.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
             }
         }
 
@@ -52,8 +62,8 @@ namespace MiniSupermarket.WinForms {
         private void dgvCategories_CellClick(object sender, DataGridViewCellEventArgs e) {
             if (e.RowIndex >= 0) {
                 DataGridViewRow row = dgvCategories.Rows[e.RowIndex];
-                txtId.Text = row.Cells["CategoryId"].Value.ToString();
-                txtCategoryName.Text = row.Cells["CategoryName"].Value.ToString();
+                txtId.Text = row.Cells["CategoryId"].Value?.ToString() ?? string.Empty;
+                txtCategoryName.Text = row.Cells["CategoryName"].Value?.ToString() ?? string.Empty;
                 txtDescription.Text = row.Cells["Description"]?.Value?.ToString() ?? string.Empty;
             }
         }
@@ -133,8 +143,9 @@ namespace MiniSupermarket.WinForms {
 
             try {
                 using var client = GetAuthenticatedClient();
-                var result = await client.GetFromJsonAsync<List<CategoryDto>>($"categories/search?keyword={keyword}");
+                var result = await client.GetFromJsonAsync<List<CategoryDto>>($"categories/search?keyword={Uri.EscapeDataString(keyword)}");
                 dgvCategories.DataSource = result;
+                FormatCategoryGrid();
             } catch (Exception) {
                 MessageBox.Show("Không tìm thấy kết quả phù hợp!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }

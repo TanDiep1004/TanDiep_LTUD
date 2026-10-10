@@ -34,7 +34,11 @@ builder.Services.AddAuthentication(options => {
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo { Title = "MiniSupermarket API", Version = "v1" });
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo { 
+        Title = "Hệ thống Bán lẻ Cô Ba Sài Gòn API", 
+        Version = "v1",
+        Description = "Nghiên cứu và Hiện thực hóa Hệ thống Quản lý Bán lẻ và Tồn kho theo Kiến trúc Client-Server (RESTful API & WinForms) — Áp dụng cho Hệ thống Bán lẻ Cô Ba Sài Gòn"
+    });
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme {
         Description = "Nhập 'Bearer [khoảng trắng] [chuỗi_token_của_bạn]' vào ô bên dưới.\r\n\r\nVí dụ: 'Bearer eyJhbGci...'",
         Name = "Authorization",

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 namespace MiniSupermarket.API.Controllers {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class ProductsController : ControllerBase {
         private readonly SupermarketDbContext _context;
 
@@ -38,7 +37,7 @@ namespace MiniSupermarket.API.Controllers {
         }
 
         // 2. GET: Lấy chi tiết sản phẩm theo ID
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id) {
             var p = await _context.Products
                 .Include(p => p.Category)
@@ -46,6 +45,32 @@ namespace MiniSupermarket.API.Controllers {
 
             if (p == null) {
                 return NotFound(new { message = "Không tìm thấy sản phẩm trong CSDL!" });
+            }
+
+            return Ok(new ProductDto {
+                ProductId = p.ProductId,
+                Barcode = p.Barcode,
+                ProductName = p.ProductName,
+                Price = p.Price,
+                StockQuantity = p.StockQuantity,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category != null ? p.Category.CategoryName : "Không xác định"
+            });
+        }
+
+        // 2b. GET: Tra cứu sản phẩm theo Barcode phục vụ Quầy POS
+        [HttpGet("barcode/{barcode}")]
+        public async Task<IActionResult> GetByBarcode(string barcode) {
+            if (string.IsNullOrWhiteSpace(barcode)) {
+                return BadRequest(new { message = "Mã vạch không được để trống!" });
+            }
+
+            var p = await _context.Products
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(x => x.Barcode == barcode);
+
+            if (p == null) {
+                return NotFound(new { message = "Không tìm thấy sản phẩm có mã vạch này!" });
             }
 
             return Ok(new ProductDto {

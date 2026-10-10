@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 namespace MiniSupermarket.API.Controllers {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Bắt buộc phải có Token mới gọi được các API trong Controller này
     public class CategoriesController : ControllerBase {
         private readonly SupermarketDbContext _context;
 

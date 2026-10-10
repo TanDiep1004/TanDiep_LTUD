@@ -14,20 +14,15 @@ namespace MiniSupermarket.WinForms {
         }
 
         private HttpClient GetAuthenticatedClient() {
-            var client = new HttpClient {
-                BaseAddress = new Uri("https://localhost:7299/api/")
-            };
-            if (!string.IsNullOrEmpty(SessionManager.JwtToken)) {
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", SessionManager.JwtToken);
-            }
-            return client;
+            return ApiClientService.CreateClient();
         }
 
         private async void FormProductManagement_Load(object sender, EventArgs e) {
-            // Phân quyền: Cashier không được quyền xóa sản phẩm
+            // Phân quyền: Cashier không được quyền Thêm, Sửa hoặc Xóa sản phẩm
             if (string.Equals(SessionManager.CurrentRole, "Cashier", StringComparison.OrdinalIgnoreCase)) {
+                btnAdd.Enabled = false;
+                btnUpdate.Enabled = false;
                 btnDelete.Enabled = false;
-                btnDelete.Text = "Xóa (Chỉ Admin)";
             }
 
             await LoadCategoriesAsync();
