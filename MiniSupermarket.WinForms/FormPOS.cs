@@ -116,8 +116,10 @@ namespace MiniSupermarket.WinForms {
                 }
 
                 UpdateCartDisplay();
+            } catch (System.Net.Http.HttpRequestException) {
+                MessageBox.Show("Mất kết nối tới máy chủ API! Vui lòng kiểm tra lại kết nối mạng hoặc máy chủ.", "Lỗi kết nối mạng", MessageBoxButtons.OK, MessageBoxIcon.Error);
             } catch (Exception ex) {
-                MessageBox.Show("Lỗi kết nối máy chủ hoặc mã vạch không hợp lệ: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lỗi quét mã vạch hoặc dữ liệu không hợp lệ: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -218,6 +220,15 @@ namespace MiniSupermarket.WinForms {
                     chkUsePoints.Checked = false;
                 }
                 UpdateCartDisplay();
+            } catch (System.Net.Http.HttpRequestException) {
+                MessageBox.Show("Mất kết nối tới máy chủ khi tìm khách hàng! Đã chuyển về khách vãng lai.", "Mất kết nối mạng", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                _currentCustomer = null;
+                lblCustomerName.Text = "Khách hàng: Khách vãng lai";
+                chkUsePoints.Visible = false;
+                numPoints.Visible = false;
+                lblPointsDiscount.Visible = false;
+                chkUsePoints.Checked = false;
+                UpdateCartDisplay();
             } catch (Exception) {
                 _currentCustomer = null;
                 lblCustomerName.Text = "Khách hàng: Khách vãng lai";
@@ -277,6 +288,8 @@ namespace MiniSupermarket.WinForms {
                     string errorMsg = await response.Content.ReadAsStringAsync();
                     MessageBox.Show("Thanh toán thất bại từ máy chủ: " + errorMsg, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
+            } catch (System.Net.Http.HttpRequestException) {
+                MessageBox.Show("Mất kết nối tới máy chủ API khi thanh toán! Đơn hàng chưa được lưu, vui lòng kiểm tra lại đường truyền mạng hoặc tiến trình máy chủ.", "Lỗi kết nối mạng", MessageBoxButtons.OK, MessageBoxIcon.Error);
             } catch (Exception ex) {
                 MessageBox.Show("Lỗi kết nối khi thanh toán: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
