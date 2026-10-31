@@ -76,6 +76,7 @@ namespace MiniSupermarket.WinForms
             this.lblQuickPreviewTitle = new System.Windows.Forms.Label();
             this.lblQuickStockInfo = new System.Windows.Forms.Label();
             this.btnUpdate = new System.Windows.Forms.Button();
+            this.btnDeleteSide = new System.Windows.Forms.Button();
 
             // Context Menu
             this.cmsProductActions = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -637,13 +638,14 @@ namespace MiniSupermarket.WinForms
             // panelQuickPreviewCard
             this.panelQuickPreviewCard.BackColor = System.Drawing.Color.White;
             this.panelQuickPreviewCard.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelQuickPreviewCard.Controls.Add(this.btnDeleteSide);
             this.panelQuickPreviewCard.Controls.Add(this.btnUpdate);
             this.panelQuickPreviewCard.Controls.Add(this.lblQuickStockInfo);
             this.panelQuickPreviewCard.Controls.Add(this.lblQuickPreviewTitle);
             this.panelQuickPreviewCard.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panelQuickPreviewCard.Location = new System.Drawing.Point(0, 214);
             this.panelQuickPreviewCard.Name = "panelQuickPreviewCard";
-            this.panelQuickPreviewCard.Padding = new System.Windows.Forms.Padding(12, 10, 12, 10);
+            this.panelQuickPreviewCard.Padding = new System.Windows.Forms.Padding(12, 8, 12, 8);
             this.panelQuickPreviewCard.Size = new System.Drawing.Size(182, 210);
             this.panelQuickPreviewCard.TabIndex = 2;
 
@@ -651,18 +653,18 @@ namespace MiniSupermarket.WinForms
             this.lblQuickPreviewTitle.AutoSize = true;
             this.lblQuickPreviewTitle.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             this.lblQuickPreviewTitle.ForeColor = System.Drawing.Color.FromArgb(15, 23, 42);
-            this.lblQuickPreviewTitle.Location = new System.Drawing.Point(10, 10);
+            this.lblQuickPreviewTitle.Location = new System.Drawing.Point(10, 8);
             this.lblQuickPreviewTitle.Name = "lblQuickPreviewTitle";
             this.lblQuickPreviewTitle.Size = new System.Drawing.Size(96, 19);
             this.lblQuickPreviewTitle.TabIndex = 0;
             this.lblQuickPreviewTitle.Text = "Xem nhanh SP";
 
             // lblQuickStockInfo
-            this.lblQuickStockInfo.Font = new System.Drawing.Font("Segoe UI", 9F);
+            this.lblQuickStockInfo.Font = new System.Drawing.Font("Segoe UI", 8.8F);
             this.lblQuickStockInfo.ForeColor = System.Drawing.Color.FromArgb(51, 65, 85);
-            this.lblQuickStockInfo.Location = new System.Drawing.Point(10, 38);
+            this.lblQuickStockInfo.Location = new System.Drawing.Point(10, 30);
             this.lblQuickStockInfo.Name = "lblQuickStockInfo";
-            this.lblQuickStockInfo.Size = new System.Drawing.Size(158, 110);
+            this.lblQuickStockInfo.Size = new System.Drawing.Size(158, 86);
             this.lblQuickStockInfo.TabIndex = 1;
             this.lblQuickStockInfo.Text = "Chọn sản phẩm trên bảng để xem tồn kho & sửa nhanh.";
 
@@ -674,13 +676,29 @@ namespace MiniSupermarket.WinForms
             this.btnUpdate.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnUpdate.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
             this.btnUpdate.ForeColor = System.Drawing.Color.White;
-            this.btnUpdate.Location = new System.Drawing.Point(12, 160);
+            this.btnUpdate.Location = new System.Drawing.Point(12, 126);
             this.btnUpdate.Name = "btnUpdate";
-            this.btnUpdate.Size = new System.Drawing.Size(156, 36);
+            this.btnUpdate.Size = new System.Drawing.Size(156, 32);
             this.btnUpdate.TabIndex = 2;
             this.btnUpdate.Text = "✎ Sửa sản phẩm";
             this.btnUpdate.UseVisualStyleBackColor = false;
             this.btnUpdate.Click += new System.EventHandler(this.btnUpdate_Click);
+
+            // btnDeleteSide
+            this.btnDeleteSide.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnDeleteSide.BackColor = System.Drawing.Color.FromArgb(220, 38, 38);
+            this.btnDeleteSide.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnDeleteSide.FlatAppearance.BorderSize = 0;
+            this.btnDeleteSide.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnDeleteSide.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.btnDeleteSide.ForeColor = System.Drawing.Color.White;
+            this.btnDeleteSide.Location = new System.Drawing.Point(12, 164);
+            this.btnDeleteSide.Name = "btnDeleteSide";
+            this.btnDeleteSide.Size = new System.Drawing.Size(156, 34);
+            this.btnDeleteSide.TabIndex = 3;
+            this.btnDeleteSide.Text = "🗑 Xóa sản phẩm";
+            this.btnDeleteSide.UseVisualStyleBackColor = false;
+            this.btnDeleteSide.Click += new System.EventHandler(this.btnDelete_Click);
 
             // cmsProductActions
             this.cmsProductActions.Font = new System.Drawing.Font("Segoe UI", 9.5F);
@@ -804,6 +822,7 @@ namespace MiniSupermarket.WinForms
         private System.Windows.Forms.Label lblQuickPreviewTitle;
         private System.Windows.Forms.Label lblQuickStockInfo;
         private System.Windows.Forms.Button btnUpdate;
+        private System.Windows.Forms.Button btnDeleteSide;
         private System.Windows.Forms.ContextMenuStrip cmsProductActions;
         private System.Windows.Forms.ToolStripMenuItem mnuEditProduct;
         private System.Windows.Forms.ToolStripMenuItem mnuUpdatePrice;

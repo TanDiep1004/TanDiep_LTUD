@@ -57,6 +57,7 @@ namespace MiniSupermarket.WinForms {
                 btnHeaderEdit.Enabled = false;
                 btnHeaderPrice.Enabled = false;
                 btnDelete.Enabled = false;
+                btnDeleteSide.Enabled = false;
                 btnImportExcel.Enabled = false;
                 btnUpdateWholesale.Enabled = false;
                 mnuEditProduct.Enabled = false;
@@ -65,6 +66,7 @@ namespace MiniSupermarket.WinForms {
             } else if (!string.Equals(SessionManager.CurrentRole, "Admin", StringComparison.OrdinalIgnoreCase)) {
                 // Thủ kho (Warehouse): Có quyền xem, thêm, sửa, nhập kho nhưng KHÔNG được xóa sản phẩm (chỉ Admin)
                 btnDelete.Enabled = false;
+                btnDeleteSide.Enabled = false;
                 mnuDeleteProduct.Enabled = false;
             }
 
