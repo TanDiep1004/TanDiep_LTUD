@@ -120,7 +120,7 @@ namespace MiniSupermarket.API.Controllers {
                         customerId = customer.CustomerId;
 
                         // Tiêu chí 47: Đổi Điểm Thưởng Trừ Tiền Hóa Đơn (Loyalty Points Redemption)
-                        // Nghiệp vụ: Dùng điểm thưởng trừ tiền (1 điểm = 1.000 đ) trong cùng SqlTransaction
+                        // Kỹ thuật: Cập nhật đồng thời trừ điểm trong bảng Customers và trừ tiền thanh toán FinalAmount trong cùng một SqlTransaction
                         if (request.PointsToRedeem > 0) {
                             pointsUsed = Math.Min(request.PointsToRedeem, customer.RewardPoints);
                             discountAmount = pointsUsed * 1000m;
@@ -128,21 +128,50 @@ namespace MiniSupermarket.API.Controllers {
                                 discountAmount = totalAmount;
                                 pointsUsed = (int)(discountAmount / 1000m);
                             }
+
+                            // 1. Trừ điểm thưởng trực tiếp trong bảng Customers qua ADO.NET SqlCommand bọc trong SqlTransaction
+                            const string deductPointsSql = @"
+                                UPDATE Customers 
+                                SET RewardPoints = RewardPoints - @PointsUsed 
+                                WHERE CustomerId = @CustomerId";
+                            await using var deductCmd = new SqlCommand(deductPointsSql, sqlConn, sqlTran);
+                            deductCmd.Parameters.AddWithValue("@PointsUsed", pointsUsed);
+                            deductCmd.Parameters.AddWithValue("@CustomerId", customer.CustomerId);
+                            await deductCmd.ExecuteNonQueryAsync();
+
                             customer.RewardPoints -= pointsUsed;
                         }
 
-                        // Số tiền thực thanh toán sau khi trừ điểm
+                        // 2. Tính số tiền thanh toán thực tế FinalAmount sau khi trừ tiền đổi điểm thưởng
                         decimal finalAmount = Math.Max(0, totalAmount - discountAmount);
 
-                        // Tích lũy điểm mới: 10.000 đ = 1 điểm
+                        // 3. Tích lũy điểm mới (10.000 đ = 1 điểm) qua ADO.NET SqlCommand bọc trong SqlTransaction
                         int pointsEarned = (int)(finalAmount / 10000);
-                        customer.RewardPoints += pointsEarned;
+                        if (pointsEarned > 0) {
+                            const string earnPointsSql = @"
+                                UPDATE Customers 
+                                SET RewardPoints = RewardPoints + @PointsEarned 
+                                WHERE CustomerId = @CustomerId";
+                            await using var earnCmd = new SqlCommand(earnPointsSql, sqlConn, sqlTran);
+                            earnCmd.Parameters.AddWithValue("@PointsEarned", pointsEarned);
+                            earnCmd.Parameters.AddWithValue("@CustomerId", customer.CustomerId);
+                            await earnCmd.ExecuteNonQueryAsync();
 
-                        // Tự động nâng hạng thành viên
-                        if (customer.RewardPoints >= 200) customer.MembershipRank = "Bạch Kim";
-                        else if (customer.RewardPoints >= 100) customer.MembershipRank = "Vàng";
-                        else if (customer.RewardPoints >= 30) customer.MembershipRank = "Bạc";
-                        else customer.MembershipRank = "Chuẩn";
+                            customer.RewardPoints += pointsEarned;
+                        }
+
+                        // 4. Cập nhật hạng thành viên trong SqlTransaction
+                        string newRank = customer.RewardPoints >= 200 ? "Bạch Kim"
+                                       : (customer.RewardPoints >= 100 ? "Vàng"
+                                       : (customer.RewardPoints >= 30 ? "Bạc" : "Chuẩn"));
+                        const string updateRankSql = "UPDATE Customers SET MembershipRank = @Rank WHERE CustomerId = @CustomerId";
+                        await using var rankCmd = new SqlCommand(updateRankSql, sqlConn, sqlTran);
+                        rankCmd.Parameters.AddWithValue("@Rank", newRank);
+                        rankCmd.Parameters.AddWithValue("@CustomerId", customer.CustomerId);
+                        await rankCmd.ExecuteNonQueryAsync();
+
+                        // Tránh EF Core tracking đối tượng Customer vì đã cập nhật trực tiếp qua SqlCommand trong transaction
+                        _context.Entry(customer).State = EntityState.Unchanged;
 
                         totalAmount = finalAmount;
                     }
