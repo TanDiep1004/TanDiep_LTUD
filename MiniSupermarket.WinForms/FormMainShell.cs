@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -196,7 +196,7 @@ namespace MiniSupermarket.WinForms {
                     btnPOS.Visible = true;
                     btnCustomer.Visible = true;
                     btnCategory.Visible = false;
-                    btnProduct.Visible = false;
+                    btnProduct.Visible = true;
                     btnReports.Visible = false;
                     btnUserManage.Visible = false;
                     break;
@@ -258,10 +258,6 @@ namespace MiniSupermarket.WinForms {
 
         // 3. Quản lý Sản phẩm (Admin & Warehouse)
         private void btnProduct_Click(object sender, EventArgs e) {
-            if (string.Equals(SessionManager.CurrentRole, "Cashier", StringComparison.OrdinalIgnoreCase)) {
-                MessageBox.Show("Nhân viên thu ngân không có quyền truy cập quản lý sản phẩm!", "Từ chối truy cập", MessageBoxButtons.OK, MessageBoxIcon.Stop);
-                return;
-            }
             OpenChildForm(new FormProductManagement(), "DANH MỤC SẢN PHẨM & GIÁ", btnProduct);
         }
 
