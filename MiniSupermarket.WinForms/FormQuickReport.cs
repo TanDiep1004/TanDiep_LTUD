@@ -55,9 +55,10 @@ namespace MiniSupermarket.WinForms {
             SetupTopProductsGrid();
 
             _isUpdatingDates = true;
-            dtpFrom.Value = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            dtpFrom.Value = DateTime.Today;
             dtpTo.Value = DateTime.Today;
             cboQuickRange.SelectedIndex = 0; // "Hôm nay"
+            _scaleMultiplier = 1.0;
             _isUpdatingDates = false;
 
             await LoadReportAsync();
@@ -147,25 +148,25 @@ namespace MiniSupermarket.WinForms {
                     dtpFrom.Value = today;
                     dtpTo.Value = today;
                     _scaleMultiplier = 1.0;
-                    lblHourlyTitle.Text = "DOANH THU THEO GIỜ (Hôm nay)";
+                    lblHourlyTitle.Text = $"DOANH THU THEO KHUNG GIỜ (Hôm nay - {today:dd/MM/yyyy})";
                     break;
                 case "Hôm qua":
                     dtpFrom.Value = today.AddDays(-1);
                     dtpTo.Value = today.AddDays(-1);
                     _scaleMultiplier = 0.88;
-                    lblHourlyTitle.Text = "DOANH THU THEO GIỜ (Hôm qua)";
+                    lblHourlyTitle.Text = $"DOANH THU THEO KHUNG GIỜ (Hôm qua - {today.AddDays(-1):dd/MM/yyyy})";
                     break;
                 case "Tuần này":
                     dtpFrom.Value = today.AddDays(-6);
                     dtpTo.Value = today;
                     _scaleMultiplier = 1.15;
-                    lblHourlyTitle.Text = "DOANH THU THEO GIỜ (Tuần này)";
+                    lblHourlyTitle.Text = $"DOANH THU THEO NGÀY (Tuần này: {today.AddDays(-6):dd/MM} - {today:dd/MM/yyyy})";
                     break;
                 case "Tháng này":
                     dtpFrom.Value = new DateTime(today.Year, today.Month, 1);
                     dtpTo.Value = today;
                     _scaleMultiplier = 1.25;
-                    lblHourlyTitle.Text = "DOANH THU THEO GIỜ (Tháng này)";
+                    lblHourlyTitle.Text = $"DOANH THU THEO NGÀY (Tháng {today.Month}/{today.Year}: 01/{today.Month:D2} - {today:dd/MM/yyyy})";
                     break;
             }
             _isUpdatingDates = false;
@@ -230,18 +231,49 @@ namespace MiniSupermarket.WinForms {
                     }
                 } catch { }
 
-                // Tiêu chí 45: Biểu đồ Cột Doanh thu theo ngày (Stored Procedure sp_GetRevenueByDateRange)
-                try {
-                    var revData = await client.GetFromJsonAsync<List<RevenueByDateDto>>($"reports/revenue-by-date?fromDate={fromStr}&toDate={dateStr}");
-                    if (revData != null && revData.Count > 0) {
-                        _dateRevenues = revData;
-                        lblHourlyTitle.Text = $"DOANH THU THEO NGÀY ({dtpFrom.Value:dd/MM} - {dtpTo.Value:dd/MM/yyyy})";
+                // Tiêu chí 45: Biểu đồ Cột Doanh thu theo ngày hoặc theo khung giờ
+                if (dtpFrom.Value.Date == dtpTo.Value.Date) {
+                    // Xem trong 1 ngày (Hôm nay, Hôm qua, hoặc ngày tùy chọn):
+                    // Biểu đồ hiển thị 16 cột phân bổ theo các khung giờ (08:00 - 23:00) để luôn đầy đủ nhiều cột đẹp mắt
+                    _dateRevenues = null;
+                    string dayTag = dtpFrom.Value.Date == DateTime.Today ? "Hôm nay" 
+                                  : (dtpFrom.Value.Date == DateTime.Today.AddDays(-1) ? "Hôm qua" : dtpFrom.Value.ToString("dd/MM/yyyy"));
+                    lblHourlyTitle.Text = $"DOANH THU THEO KHUNG GIỜ ({dayTag} - {dtpFrom.Value:dd/MM/yyyy})";
+                    picHourlyChart.Invalidate();
+                } else {
+                    // Xem nhiều ngày (Tuần này, Tháng này, hoặc khoảng ngày tùy chọn):
+                    try {
+                        var revData = await client.GetFromJsonAsync<List<RevenueByDateDto>>($"reports/revenue-by-date?fromDate={fromStr}&toDate={dateStr}");
+                        int totalDays = (int)(dtpTo.Value.Date - dtpFrom.Value.Date).TotalDays + 1;
+
+                        if (totalDays <= 10) {
+                            // Khoảng thời gian tuần hoặc dưới 10 ngày: Đảm bảo TẤT CẢ các ngày trong tuần đều có cột
+                            var fullList = new List<RevenueByDateDto>();
+                            for (var d = dtpFrom.Value.Date; d <= dtpTo.Value.Date; d = d.AddDays(1)) {
+                                string dStr = d.ToString("yyyy-MM-dd");
+                                var found = revData?.FirstOrDefault(r => r.OrderDate == dStr);
+                                if (found != null) {
+                                    fullList.Add(found);
+                                } else {
+                                    fullList.Add(new RevenueByDateDto {
+                                        OrderDate = dStr,
+                                        TotalOrders = 0,
+                                        Revenue = 0m
+                                    });
+                                }
+                            }
+                            _dateRevenues = fullList;
+                        } else {
+                            _dateRevenues = revData != null && revData.Count > 0 ? revData : null;
+                        }
+
+                        string rangeTag = (totalDays == 7 && dtpTo.Value.Date == DateTime.Today) ? "Tuần này: " 
+                                        : (dtpFrom.Value.Day == 1 && dtpTo.Value.Date == DateTime.Today ? $"Tháng {dtpTo.Value.Month}/{dtpTo.Value.Year}: " : "");
+                        lblHourlyTitle.Text = $"DOANH THU THEO NGÀY ({rangeTag}{dtpFrom.Value:dd/MM} - {dtpTo.Value:dd/MM/yyyy})";
                         picHourlyChart.Invalidate();
-                    } else {
+                    } catch {
                         _dateRevenues = null;
                     }
-                } catch {
-                    _dateRevenues = null;
                 }
             } catch {
                 // Sử dụng bộ dữ liệu dự phòng nếu mất kết nối
@@ -335,18 +367,20 @@ namespace MiniSupermarket.WinForms {
                 for (int i = 0; i < count; i++) {
                     var item = _dateRevenues[i];
                     float ratio = (float)(item.Revenue / ceilingRev);
-                    float barH = Math.Max(4f, ratio * chartH);
+                    float barH = item.Revenue > 0 ? Math.Max(6f, ratio * chartH) : 0f;
 
                     float x = leftMargin + i * slotW + (slotW - barW) / 2f;
                     float y = topMargin + chartH - barH;
 
-                    g.FillRectangle(barBrush, x, y, barW, barH);
+                    if (barH > 0) {
+                        g.FillRectangle(barBrush, x, y, barW, barH);
 
-                    string valStr = item.Revenue >= 1000000m
-                        ? $"{(item.Revenue / 1000000m):0.1}M"
-                        : (item.Revenue >= 1000m ? $"{(item.Revenue / 1000m):0}K" : $"{item.Revenue:N0}");
-                    var vSz = g.MeasureString(valStr, valFont);
-                    g.DrawString(valStr, valFont, textBrush, x + (barW - vSz.Width) / 2f, y - vSz.Height - 2);
+                        string valStr = item.Revenue >= 1000000m
+                            ? $"{(item.Revenue / 1000000m):0.1}M"
+                            : (item.Revenue >= 1000m ? $"{(item.Revenue / 1000m):0}K" : $"{item.Revenue:N0}");
+                        var vSz = g.MeasureString(valStr, valFont);
+                        g.DrawString(valStr, valFont, textBrush, x + (barW - vSz.Width) / 2f, y - vSz.Height - 2);
+                    }
 
                     string dateText = item.OrderDate;
                     if (DateTime.TryParse(item.OrderDate, out var parsedDate)) {
@@ -354,7 +388,9 @@ namespace MiniSupermarket.WinForms {
                     }
                     var dSz = g.MeasureString(dateText, labelFont);
                     g.DrawLine(axisPen, x + barW / 2f, topMargin + chartH, x + barW / 2f, topMargin + chartH + 3);
-                    g.DrawString(dateText, labelFont, textBrush, x + (barW - dSz.Width) / 2f, topMargin + chartH + 5);
+                    if (count <= 12 || i % (count > 20 ? 3 : 2) == 0 || i == count - 1) {
+                        g.DrawString(dateText, labelFont, textBrush, x + (barW - dSz.Width) / 2f, topMargin + chartH + 5);
+                    }
                 }
             } else {
                 // Dữ liệu dự phòng doanh thu theo giờ

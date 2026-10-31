@@ -265,7 +265,7 @@ namespace MiniSupermarket.WinForms
             this.lblQuickRange.Name = "lblQuickRange";
             this.lblQuickRange.Size = new System.Drawing.Size(35, 17);
             this.lblQuickRange.TabIndex = 5;
-            this.lblQuickRange.Text = "Tạm:";
+            this.lblQuickRange.Text = "Xem:";
 
             // cboQuickRange
             this.cboQuickRange.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
