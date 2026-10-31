@@ -14,10 +14,11 @@ namespace MiniSupermarket.WinForms {
         // Tiêu chí 47: Điều khiển Đổi Điểm Thưởng Trừ Tiền Hóa Đơn (Loyalty Points Redemption)
         private readonly Panel pnlLoyalty = new();
         private readonly CheckBox chkUsePoints = new();
-        private readonly Button btnQuick50 = new();
+        private readonly Label lblAvailablePoints = new();
+        private readonly Label lblUsePointsTitle = new();
+        private readonly NumericUpDown numPoints = new();
         private readonly Button btnQuickMax = new();
         private readonly Button btnResetPoints = new();
-        private readonly NumericUpDown numPoints = new();
         private readonly Label lblPointsDiscount = new();
         private readonly Label lblFinalTitle = new();
         private readonly Label lblSubTotal = new();
@@ -32,9 +33,9 @@ namespace MiniSupermarket.WinForms {
         }
 
         private void InitializeLoyaltyPointsControls() {
-            // Nút khách mẫu trong grpCustomer để giảng viên/người dùng kiểm thử nhanh 1-click
-            btnSampleCustomer.Location = new Point(255, 47);
-            btnSampleCustomer.Size = new Size(88, 28);
+            // Nút khách mẫu trong grpCustomer để kiểm thử nhanh 1-click
+            btnSampleCustomer.Location = new Point(245, 46);
+            btnSampleCustomer.Size = new Size(95, 27);
             btnSampleCustomer.Text = "👤 Mẫu (100đ)";
             btnSampleCustomer.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
             btnSampleCustomer.BackColor = Color.FromArgb(79, 70, 229);
@@ -47,10 +48,11 @@ namespace MiniSupermarket.WinForms {
             };
             grpCustomer.Controls.Add(btnSampleCustomer);
 
-            btnFindCustomer.Location = new Point(168, 47);
-            btnFindCustomer.Size = new Size(82, 28);
-            txtCustomerPhone.Location = new Point(14, 48);
-            txtCustomerPhone.Size = new Size(148, 25);
+            btnFindCustomer.Location = new Point(165, 46);
+            btnFindCustomer.Size = new Size(75, 27);
+            btnFindCustomer.Text = "🔍 Tìm";
+            txtCustomerPhone.Location = new Point(14, 47);
+            txtCustomerPhone.Size = new Size(145, 25);
             txtCustomerPhone.KeyDown += async (s, e) => {
                 if (e.KeyCode == Keys.Enter) {
                     e.Handled = true;
@@ -61,10 +63,10 @@ namespace MiniSupermarket.WinForms {
 
             // Tiêu đề & giá trị Tiền hàng (Tạm tính)
             lblTotalTitle.Text = "Tiền hàng (Tạm tính):";
-            lblTotalTitle.Location = new Point(12, 22);
+            lblTotalTitle.Location = new Point(12, 20);
             lblTotalTitle.Font = new Font("Segoe UI", 9.5F);
 
-            lblSubTotal.Location = new Point(170, 22);
+            lblSubTotal.Location = new Point(170, 20);
             lblSubTotal.Size = new Size(170, 20);
             lblSubTotal.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             lblSubTotal.ForeColor = Color.FromArgb(71, 85, 105);
@@ -73,48 +75,62 @@ namespace MiniSupermarket.WinForms {
             grpPayment.Controls.Add(lblSubTotal);
 
             // ================= KHUNG ĐỔI ĐIỂM THƯỞNG (TIÊU CHÍ 47) =================
-            pnlLoyalty.Location = new Point(12, 46);
-            pnlLoyalty.Size = new Size(330, 95);
-            pnlLoyalty.BackColor = Color.FromArgb(240, 253, 244);
+            pnlLoyalty.Location = new Point(12, 45);
+            pnlLoyalty.Size = new Size(330, 84);
+            pnlLoyalty.BackColor = Color.FromArgb(248, 250, 252);
             pnlLoyalty.BorderStyle = BorderStyle.FixedSingle;
 
             chkUsePoints.Location = new Point(8, 6);
-            chkUsePoints.Size = new Size(314, 22);
-            chkUsePoints.Text = "🎁 Dùng 50 điểm trừ 50.000 đ vào hóa đơn";
-            chkUsePoints.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            chkUsePoints.ForeColor = Color.FromArgb(22, 101, 52);
+            chkUsePoints.Size = new Size(185, 22);
+            chkUsePoints.Text = "🎁 Đổi điểm thưởng";
+            chkUsePoints.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            chkUsePoints.ForeColor = Color.FromArgb(30, 41, 59);
             chkUsePoints.Cursor = Cursors.Hand;
             chkUsePoints.CheckedChanged += (s, e) => {
                 if (chkUsePoints.Checked) {
                     if (numPoints.Value == 0) {
-                        numPoints.Value = Math.Min(50, numPoints.Maximum > 0 ? numPoints.Maximum : 50);
+                        int def = _currentCustomer != null && _currentCustomer.RewardPoints > 0 
+                            ? Math.Min(50, _currentCustomer.RewardPoints) : 50;
+                        numPoints.Value = def;
                     }
+                } else {
+                    numPoints.Value = 0;
                 }
                 UpdateCartDisplay();
             };
 
-            btnQuick50.Location = new Point(8, 32);
-            btnQuick50.Size = new Size(118, 26);
-            btnQuick50.Text = "Dùng 50đ (-50K)";
-            btnQuick50.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-            btnQuick50.BackColor = Color.FromArgb(22, 163, 74);
-            btnQuick50.ForeColor = Color.White;
-            btnQuick50.FlatStyle = FlatStyle.Flat;
-            btnQuick50.Cursor = Cursors.Hand;
-            btnQuick50.Click += (s, e) => {
-                if (_currentCustomer != null && _currentCustomer.RewardPoints >= 50) {
-                    numPoints.Value = 50;
+            lblAvailablePoints.Location = new Point(195, 6);
+            lblAvailablePoints.Size = new Size(125, 22);
+            lblAvailablePoints.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+            lblAvailablePoints.ForeColor = Color.FromArgb(37, 99, 235);
+            lblAvailablePoints.TextAlign = ContentAlignment.MiddleRight;
+            lblAvailablePoints.Text = "Khả dụng: 0 đ";
+
+            lblUsePointsTitle.Location = new Point(8, 32);
+            lblUsePointsTitle.Size = new Size(88, 24);
+            lblUsePointsTitle.Font = new Font("Segoe UI", 9F);
+            lblUsePointsTitle.ForeColor = Color.FromArgb(71, 85, 105);
+            lblUsePointsTitle.Text = "Số điểm đổi:";
+            lblUsePointsTitle.TextAlign = ContentAlignment.MiddleLeft;
+
+            numPoints.Location = new Point(98, 32);
+            numPoints.Size = new Size(82, 24);
+            numPoints.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            numPoints.TextAlign = HorizontalAlignment.Center;
+            numPoints.Minimum = 0;
+            numPoints.Maximum = 10000;
+            numPoints.Value = 0;
+            numPoints.ValueChanged += (s, e) => {
+                if (numPoints.Value > 0 && !chkUsePoints.Checked) {
                     chkUsePoints.Checked = true;
-                    UpdateCartDisplay();
-                } else if (_currentCustomer != null) {
-                    MessageBox.Show($"Khách hàng chỉ có {_currentCustomer.RewardPoints} điểm, không đủ 50 điểm để đổi mốc này!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                } else {
-                    MessageBox.Show("Vui lòng tra cứu khách hàng thành viên trước khi đổi điểm!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                } else if (numPoints.Value == 0 && chkUsePoints.Checked) {
+                    chkUsePoints.Checked = false;
                 }
+                UpdateCartDisplay();
             };
 
-            btnQuickMax.Location = new Point(130, 32);
-            btnQuickMax.Size = new Size(78, 26);
+            btnQuickMax.Location = new Point(188, 31);
+            btnQuickMax.Size = new Size(80, 26);
             btnQuickMax.Text = "Dùng hết";
             btnQuickMax.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
             btnQuickMax.BackColor = Color.FromArgb(37, 99, 235);
@@ -129,29 +145,14 @@ namespace MiniSupermarket.WinForms {
                     chkUsePoints.Checked = true;
                     UpdateCartDisplay();
                 } else {
-                    MessageBox.Show("Khách hàng không có điểm tích lũy hoặc chưa chọn khách!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show("Khách hàng không có điểm tích lũy hoặc chưa chọn khách hàng!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             };
 
-            numPoints.Location = new Point(212, 33);
-            numPoints.Size = new Size(64, 24);
-            numPoints.Font = new Font("Segoe UI", 9F);
-            numPoints.Minimum = 0;
-            numPoints.Maximum = 10000;
-            numPoints.Value = 50;
-            numPoints.ValueChanged += (s, e) => {
-                if (numPoints.Value > 0 && !chkUsePoints.Checked) {
-                    chkUsePoints.Checked = true;
-                } else if (numPoints.Value == 0 && chkUsePoints.Checked) {
-                    chkUsePoints.Checked = false;
-                }
-                UpdateCartDisplay();
-            };
-
-            btnResetPoints.Location = new Point(280, 32);
-            btnResetPoints.Size = new Size(42, 26);
+            btnResetPoints.Location = new Point(273, 31);
+            btnResetPoints.Size = new Size(47, 26);
             btnResetPoints.Text = "Hủy";
-            btnResetPoints.Font = new Font("Segoe UI", 8F);
+            btnResetPoints.Font = new Font("Segoe UI", 8.5F);
             btnResetPoints.BackColor = Color.FromArgb(241, 245, 249);
             btnResetPoints.ForeColor = Color.FromArgb(71, 85, 105);
             btnResetPoints.FlatStyle = FlatStyle.Flat;
@@ -162,43 +163,44 @@ namespace MiniSupermarket.WinForms {
                 UpdateCartDisplay();
             };
 
-            lblPointsDiscount.Location = new Point(8, 64);
-            lblPointsDiscount.Size = new Size(314, 24);
+            lblPointsDiscount.Location = new Point(8, 59);
+            lblPointsDiscount.Size = new Size(314, 20);
             lblPointsDiscount.Font = new Font("Segoe UI", 8.5F, FontStyle.Italic);
-            lblPointsDiscount.ForeColor = Color.FromArgb(21, 128, 61);
-            lblPointsDiscount.Text = "Nhập SĐT khách thành viên để đổi điểm trừ tiền (1 điểm = 1.000 đ)";
+            lblPointsDiscount.ForeColor = Color.FromArgb(100, 116, 139);
+            lblPointsDiscount.Text = "Tỷ lệ quy đổi: 1 điểm = 1.000 đ";
 
             pnlLoyalty.Controls.Add(chkUsePoints);
-            pnlLoyalty.Controls.Add(btnQuick50);
-            pnlLoyalty.Controls.Add(btnQuickMax);
+            pnlLoyalty.Controls.Add(lblAvailablePoints);
+            pnlLoyalty.Controls.Add(lblUsePointsTitle);
             pnlLoyalty.Controls.Add(numPoints);
+            pnlLoyalty.Controls.Add(btnQuickMax);
             pnlLoyalty.Controls.Add(btnResetPoints);
             pnlLoyalty.Controls.Add(lblPointsDiscount);
             grpPayment.Controls.Add(pnlLoyalty);
 
             // Tiêu đề & Tổng tiền thực thanh toán FinalAmount
-            lblFinalTitle.Location = new Point(12, 146);
-            lblFinalTitle.Size = new Size(240, 20);
-            lblFinalTitle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            lblFinalTitle.Location = new Point(12, 136);
+            lblFinalTitle.Size = new Size(240, 18);
+            lblFinalTitle.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             lblFinalTitle.ForeColor = Color.FromArgb(30, 41, 59);
             lblFinalTitle.Text = "TỔNG CẦN TRẢ (FinalAmount):";
             grpPayment.Controls.Add(lblFinalTitle);
 
-            lblTotalAmount.Location = new Point(12, 166);
+            lblTotalAmount.Location = new Point(12, 154);
             lblTotalAmount.Size = new Size(330, 42);
 
-            lblCashTitle.Location = new Point(12, 212);
+            lblCashTitle.Location = new Point(12, 200);
             lblCashTitle.Text = "Tiền khách đưa:";
-            txtCashReceived.Location = new Point(14, 232);
+            txtCashReceived.Location = new Point(14, 220);
             txtCashReceived.Size = new Size(326, 32);
 
-            lblChangeTitle.Location = new Point(12, 272);
+            lblChangeTitle.Location = new Point(12, 258);
             lblChangeTitle.Text = "Tiền thừa trả khách:";
-            lblChange.Location = new Point(12, 292);
+            lblChange.Location = new Point(12, 276);
             lblChange.Size = new Size(330, 38);
 
-            btnCheckout.Location = new Point(14, 340);
-            btnCheckout.Size = new Size(326, 62);
+            btnCheckout.Location = new Point(14, 324);
+            btnCheckout.Size = new Size(326, 60);
         }
 
         private void FormPOS_Load(object? sender, EventArgs e) {
@@ -279,14 +281,17 @@ namespace MiniSupermarket.WinForms {
                 if (discount > subTotal) {
                     discount = subTotal;
                 }
-                lblPointsDiscount.Text = $"✔ Đã áp dụng: Dùng {numPoints.Value} điểm trừ {discount:N0} đ vào hóa đơn";
+                lblPointsDiscount.Text = $"✔ Giảm trừ thanh toán: -{discount:N0} đ ({numPoints.Value} điểm)";
+                lblPointsDiscount.Font = new Font("Segoe UI", 8.8F, FontStyle.Bold);
                 lblPointsDiscount.ForeColor = Color.FromArgb(22, 101, 52);
             } else if (_currentCustomer != null && _currentCustomer.RewardPoints > 0) {
-                lblPointsDiscount.Text = $"Khách có {_currentCustomer.RewardPoints} điểm. Bấm chọn hoặc nhập điểm để trừ tiền.";
+                lblPointsDiscount.Text = $"Khách có {_currentCustomer.RewardPoints} điểm (Tối đa: {_currentCustomer.RewardPoints * 1000:N0} đ)";
+                lblPointsDiscount.Font = new Font("Segoe UI", 8.5F, FontStyle.Italic);
                 lblPointsDiscount.ForeColor = Color.FromArgb(71, 85, 105);
             } else {
-                lblPointsDiscount.Text = "Nhập SĐT khách thành viên để đổi điểm trừ tiền (1 điểm = 1.000 đ)";
-                lblPointsDiscount.ForeColor = Color.FromArgb(148, 163, 184);
+                lblPointsDiscount.Text = "Tỷ lệ quy đổi: 1 điểm = 1.000 đ";
+                lblPointsDiscount.Font = new Font("Segoe UI", 8.5F, FontStyle.Italic);
+                lblPointsDiscount.ForeColor = Color.FromArgb(100, 116, 139);
             }
 
             decimal finalAmount = Math.Max(0, subTotal - discount);
@@ -328,9 +333,13 @@ namespace MiniSupermarket.WinForms {
             if (string.IsNullOrWhiteSpace(phone)) {
                 _currentCustomer = null;
                 lblCustomerName.Text = "Khách hàng: Khách vãng lai";
-                lblCustomerName.ForeColor = Color.FromArgb(71, 85, 105);
+                lblCustomerName.ForeColor = Color.FromArgb(100, 116, 139);
+                lblAvailablePoints.Text = "Khả dụng: 0 đ";
                 chkUsePoints.Checked = false;
                 numPoints.Value = 0;
+                numPoints.Maximum = 0;
+                numPoints.Enabled = false;
+                btnQuickMax.Enabled = false;
                 UpdateCartDisplay();
                 return;
             }
@@ -341,30 +350,36 @@ namespace MiniSupermarket.WinForms {
                 var cust = customers?.FirstOrDefault(c => c.PhoneNumber == phone);
                 if (cust != null) {
                     _currentCustomer = cust;
-                    lblCustomerName.Text = $"👤 {cust.CustomerName} | Hạng: {cust.MembershipRank}\nĐiểm tích lũy: {cust.RewardPoints} điểm (Quy đổi: {cust.RewardPoints * 1000:N0} đ)";
+                    lblCustomerName.Text = $"👤 {cust.CustomerName} | Hạng: {cust.MembershipRank}\nĐiểm tích lũy: {cust.RewardPoints} điểm";
                     lblCustomerName.ForeColor = Color.FromArgb(29, 78, 216);
+                    lblAvailablePoints.Text = $"Khả dụng: {cust.RewardPoints} đ";
+                    lblAvailablePoints.ForeColor = Color.FromArgb(37, 99, 235);
 
                     // Tiêu chí 47: Khách hàng thân thiết có điểm tích lũy, kích hoạt đổi điểm
                     if (cust.RewardPoints > 0) {
                         numPoints.Maximum = cust.RewardPoints;
-                        int defaultPoints = Math.Min(cust.RewardPoints, 50);
-                        numPoints.Value = defaultPoints;
-                        chkUsePoints.Text = $"🎁 Dùng {defaultPoints} điểm trừ {defaultPoints * 1000:N0} đ vào hóa đơn";
-                        btnQuick50.Enabled = cust.RewardPoints >= 50;
+                        numPoints.Enabled = true;
                         btnQuickMax.Enabled = true;
-                        lblPointsDiscount.Text = $"Khách có {cust.RewardPoints} điểm. Tích chọn hoặc bấm nút để đổi điểm.";
+                        chkUsePoints.Enabled = true;
+                        lblPointsDiscount.Text = $"Khách có {cust.RewardPoints} điểm. Nhập điểm hoặc bấm [Dùng hết].";
                     } else {
-                        btnQuick50.Enabled = false;
+                        numPoints.Maximum = 0;
+                        numPoints.Value = 0;
+                        numPoints.Enabled = false;
                         btnQuickMax.Enabled = false;
                         chkUsePoints.Checked = false;
+                        chkUsePoints.Enabled = false;
                         lblPointsDiscount.Text = "Khách hàng hiện có 0 điểm tích lũy.";
                     }
                 } else {
                     _currentCustomer = null;
                     lblCustomerName.Text = "SĐT chưa đăng ký thành viên (Khách mới)";
                     lblCustomerName.ForeColor = Color.FromArgb(234, 88, 12);
+                    lblAvailablePoints.Text = "Khả dụng: 0 đ";
                     chkUsePoints.Checked = false;
-                    btnQuick50.Enabled = false;
+                    numPoints.Value = 0;
+                    numPoints.Maximum = 0;
+                    numPoints.Enabled = false;
                     btnQuickMax.Enabled = false;
                 }
                 UpdateCartDisplay();
@@ -373,14 +388,18 @@ namespace MiniSupermarket.WinForms {
                 _currentCustomer = null;
                 lblCustomerName.Text = "Khách hàng: Khách vãng lai";
                 chkUsePoints.Checked = false;
-                btnQuick50.Enabled = false;
+                numPoints.Value = 0;
+                numPoints.Maximum = 0;
+                numPoints.Enabled = false;
                 btnQuickMax.Enabled = false;
                 UpdateCartDisplay();
             } catch (Exception) {
                 _currentCustomer = null;
                 lblCustomerName.Text = "Khách hàng: Khách vãng lai";
                 chkUsePoints.Checked = false;
-                btnQuick50.Enabled = false;
+                numPoints.Value = 0;
+                numPoints.Maximum = 0;
+                numPoints.Enabled = false;
                 btnQuickMax.Enabled = false;
                 UpdateCartDisplay();
             }
@@ -437,7 +456,7 @@ namespace MiniSupermarket.WinForms {
                     txtCashReceived.Clear();
                     txtCustomerPhone.Clear();
                     lblCustomerName.Text = "Khách hàng: Khách vãng lai";
-                    lblCustomerName.ForeColor = Color.FromArgb(71, 85, 105);
+                    lblCustomerName.ForeColor = Color.FromArgb(100, 116, 139);
                     txtBarcode.Focus();
                 } else {
                     string errorMsg = await response.Content.ReadAsStringAsync();
