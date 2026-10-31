@@ -6,12 +6,22 @@ using MiniSupermarket.API.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Lấy chuỗi kết nối từ appsettings.json
+// Lấy chuỗi kết nối tập trung từ appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// Đăng ký DbContext sử dụng SQL Server qua cơ chế Dependency Injection (DI)
+// Đăng ký DbContext sử dụng SQL Server qua cơ chế Dependency Injection (DI Container)
 builder.Services.AddDbContext<SupermarketDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString)
+           .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning)));
+
+// Cấu hình dịch vụ CORS cho phép ứng dụng Client (WinForms / Web) gọi API
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAll", policy => {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -31,7 +41,7 @@ builder.Services.AddAuthentication(options => {
     };
 });
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Cấu hình Swagger/OpenAPI tích hợp kiểm thử Bearer Token
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c => {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo { 
@@ -56,14 +66,45 @@ builder.Services.AddSwaggerGen(c => {
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Tự động khởi tạo CSDL và cập nhật Migration (kèm dữ liệu mẫu) khi khởi động API
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    var dbContext = scope.ServiceProvider.GetRequiredService<SupermarketDbContext>();
+    dbContext.Database.Migrate();
 }
 
+// Configure the HTTP request pipeline.
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "MiniSupermarket.API v1");
+    try
+    {
+        var uiAsm = typeof(Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIOptions).Assembly;
+        var cssBuilder = new StringBuilder("<style>");
+        foreach (var resName in new[] {
+            "Swashbuckle.AspNetCore.SwaggerUI.node_modules.swagger_ui_dist.swagger-ui.css",
+            "Swashbuckle.AspNetCore.SwaggerUI.node_modules.swagger_ui_dist.index.css"
+        })
+        {
+            using var stream = uiAsm.GetManifestResourceStream(resName);
+            if (stream != null)
+            {
+                using var gz = new System.IO.Compression.GZipStream(stream, System.IO.Compression.CompressionMode.Decompress);
+                using var reader = new System.IO.StreamReader(gz, Encoding.UTF8);
+                cssBuilder.AppendLine(reader.ReadToEnd());
+            }
+        }
+        cssBuilder.AppendLine("</style>");
+        c.HeadContent = cssBuilder.ToString();
+    }
+    catch { }
+});
+
 app.UseHttpsRedirection();
+
+// Kích hoạt CORS
+app.UseCors("AllowAll");
 
 // Bắt buộc gọi UseAuthentication trước UseAuthorization
 app.UseAuthentication();

@@ -46,18 +46,22 @@ namespace MiniSupermarket.WinForms {
 
         private async void btnAdd_Click(object sender, EventArgs e) {
             var newRole = new { 
-                RoleName = txtRoleName.Text, 
-                Description = txtDescription.Text 
+                RoleName = txtRoleName.Text.Trim(), 
+                Description = txtDescription.Text.Trim() 
             };
 
-            using var client = GetAuthenticatedClient();
-            var response = await client.PostAsJsonAsync("roles", newRole);
-            if (response.IsSuccessStatusCode) {
-                MessageBox.Show("Thêm mới thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                await LoadDataAsync();
-                ClearInputs();
-            } else {
-                MessageBox.Show("Thêm mới thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            try {
+                using var client = GetAuthenticatedClient();
+                var response = await client.PostAsJsonAsync("roles", newRole);
+                if (response.IsSuccessStatusCode) {
+                    MessageBox.Show("Thêm mới thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadDataAsync();
+                    ClearInputs();
+                } else {
+                    MessageBox.Show("Thêm mới thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            } catch (Exception ex) {
+                MessageBox.Show("Lỗi kết nối Server: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -70,18 +74,22 @@ namespace MiniSupermarket.WinForms {
             int id = int.Parse(txtId.Text);
             var updateRole = new { 
                 RoleId = id, 
-                RoleName = txtRoleName.Text, 
-                Description = txtDescription.Text 
+                RoleName = txtRoleName.Text.Trim(), 
+                Description = txtDescription.Text.Trim() 
             };
 
-            using var client = GetAuthenticatedClient();
-            var response = await client.PutAsJsonAsync($"roles/{id}", updateRole);
-            if (response.IsSuccessStatusCode) {
-                MessageBox.Show("Cập nhật thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                await LoadDataAsync();
-                ClearInputs();
-            } else {
-                MessageBox.Show("Cập nhật thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            try {
+                using var client = GetAuthenticatedClient();
+                var response = await client.PutAsJsonAsync($"roles/{id}", updateRole);
+                if (response.IsSuccessStatusCode) {
+                    MessageBox.Show("Cập nhật thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    await LoadDataAsync();
+                    ClearInputs();
+                } else {
+                    MessageBox.Show("Cập nhật thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            } catch (Exception ex) {
+                MessageBox.Show("Lỗi kết nối Server: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -94,14 +102,18 @@ namespace MiniSupermarket.WinForms {
             int id = int.Parse(txtId.Text);
             var confirm = MessageBox.Show($"Bạn có chắc muốn xóa chức vụ ID = {id}?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
             if (confirm == DialogResult.Yes) {
-                using var client = GetAuthenticatedClient();
-                var response = await client.DeleteAsync($"roles/{id}");
-                if (response.IsSuccessStatusCode) {
-                    MessageBox.Show("Xóa thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    await LoadDataAsync();
-                    ClearInputs();
-                } else {
-                    MessageBox.Show("Xóa thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                try {
+                    using var client = GetAuthenticatedClient();
+                    var response = await client.DeleteAsync($"roles/{id}");
+                    if (response.IsSuccessStatusCode) {
+                        MessageBox.Show("Xóa thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        await LoadDataAsync();
+                        ClearInputs();
+                    } else {
+                        MessageBox.Show("Xóa thất bại!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+                } catch (Exception ex) {
+                    MessageBox.Show("Lỗi kết nối Server: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }
@@ -115,7 +127,7 @@ namespace MiniSupermarket.WinForms {
 
             try {
                 using var client = GetAuthenticatedClient();
-                var result = await client.GetFromJsonAsync<List<RoleDto>>($"roles/search?keyword={keyword}");
+                var result = await client.GetFromJsonAsync<List<RoleDto>>($"roles/search?keyword={Uri.EscapeDataString(keyword)}");
                 dgvRoles.DataSource = result;
             } catch (Exception) {
                 MessageBox.Show("Không tìm thấy kết quả phù hợp!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);

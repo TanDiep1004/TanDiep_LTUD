@@ -32,6 +32,7 @@ namespace MiniSupermarket.API.Models
         public string? Address { get; set; }
 
         // 5. Điểm thưởng tích lũy (Mặc định là 0 khi đăng ký mới)
+        [Range(0, int.MaxValue, ErrorMessage = "Điểm tích lũy không được âm!")]
         public int RewardPoints { get; set; } = 0;
 
         // 6. Hạng thẻ thành viên: Chuẩn, Bạc, Vàng, Bạch Kim
@@ -39,7 +40,7 @@ namespace MiniSupermarket.API.Models
         public string MembershipRank { get; set; } = "Chuẩn";
 
         // Thuộc tính điều hướng: Một khách hàng có thể có nhiều hóa đơn mua hàng
-        // [JsonIgnore]
-        // public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+        [JsonIgnore]
+        public virtual ICollection<Order>? Orders { get; set; }
     }
 }

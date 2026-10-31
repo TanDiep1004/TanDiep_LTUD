@@ -169,7 +169,7 @@ namespace MiniSupermarket.WinForms
             this.btnCategory.Padding = new System.Windows.Forms.Padding(18, 0, 0, 0);
             this.btnCategory.Size = new System.Drawing.Size(230, 48);
             this.btnCategory.TabIndex = 1;
-            this.btnCategory.Text = "📁  Quản lý Danh mục";
+            this.btnCategory.Text = "📦  Quản lý Kho & Nhập hàng";
             this.btnCategory.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnCategory.UseVisualStyleBackColor = true;
             this.btnCategory.Click += new System.EventHandler(this.btnCategory_Click);
@@ -186,7 +186,7 @@ namespace MiniSupermarket.WinForms
             this.btnProduct.Padding = new System.Windows.Forms.Padding(18, 0, 0, 0);
             this.btnProduct.Size = new System.Drawing.Size(230, 48);
             this.btnProduct.TabIndex = 2;
-            this.btnProduct.Text = "📦  Quản lý Sản phẩm";
+            this.btnProduct.Text = "📋  Danh mục Sản phẩm & Giá";
             this.btnProduct.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnProduct.UseVisualStyleBackColor = true;
             this.btnProduct.Click += new System.EventHandler(this.btnProduct_Click);
@@ -203,7 +203,7 @@ namespace MiniSupermarket.WinForms
             this.btnCustomer.Padding = new System.Windows.Forms.Padding(18, 0, 0, 0);
             this.btnCustomer.Size = new System.Drawing.Size(230, 48);
             this.btnCustomer.TabIndex = 3;
-            this.btnCustomer.Text = "👥  Quản lý Khách hàng";
+            this.btnCustomer.Text = "👥  Khách hàng & Tích điểm";
             this.btnCustomer.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnCustomer.UseVisualStyleBackColor = true;
             this.btnCustomer.Click += new System.EventHandler(this.btnCustomer_Click);
@@ -237,7 +237,7 @@ namespace MiniSupermarket.WinForms
             this.btnUserManage.Padding = new System.Windows.Forms.Padding(18, 0, 0, 0);
             this.btnUserManage.Size = new System.Drawing.Size(230, 48);
             this.btnUserManage.TabIndex = 5;
-            this.btnUserManage.Text = "🛡  Quản trị Tài khoản";
+            this.btnUserManage.Text = "⚙  Phân quyền & Cài đặt";
             this.btnUserManage.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnUserManage.UseVisualStyleBackColor = true;
             this.btnUserManage.Click += new System.EventHandler(this.btnUserManage_Click);

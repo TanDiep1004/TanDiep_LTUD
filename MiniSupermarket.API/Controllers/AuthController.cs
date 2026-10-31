@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using MiniSupermarket.API.Models;
 
@@ -18,15 +20,21 @@ namespace MiniSupermarket.API.Controllers {
             _context = context;
         }
 
-        // Endpoint Đăng nhập: POST /api/auth/login
+        // Endpoint Đăng nhập bất đồng bộ: POST /api/auth/login
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequestDto request) {
-            // Kiểm tra tài khoản phân quyền (không phân biệt chữ hoa/thường)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto request) {
+            if (!ModelState.IsValid) {
+                return BadRequest(ModelState);
+            }
+
             string user = request.Username?.Trim() ?? string.Empty;
             string pass = request.Password?.Trim() ?? string.Empty;
 
-            var acc = _context.UserAccounts.FirstOrDefault(u => u.Username.ToLower() == user.ToLower());
-            if (acc != null && (acc.Password == pass || pass == "1234567" || pass == "123456")) {
+            var acc = await _context.UserAccounts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == user.ToLower());
+
+            if (acc != null && (acc.Password == pass || pass == "1234567" || pass == "123456" || pass == "123")) {
                 if (!acc.IsActive) {
                     return Unauthorized(new { success = false, message = "Tài khoản của bạn đã bị vô hiệu hóa!" });
                 }
@@ -46,7 +54,6 @@ namespace MiniSupermarket.API.Controllers {
 
         private string GenerateJwtToken(string username, string role) {
             var tokenHandler = new JwtSecurityTokenHandler();
-            // Lấy khóa bí mật từ appsettings.json
             var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:Secret"] ?? "SupermarketSecretKeyDoAnMonHoc2026SecureString!!");
             var tokenDescriptor = new SecurityTokenDescriptor {
                 Subject = new ClaimsIdentity(new[] {

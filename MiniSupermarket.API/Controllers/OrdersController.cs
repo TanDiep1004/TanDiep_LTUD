@@ -1,7 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using MiniSupermarket.API.Data;
+using MiniSupermarket.API.DTOs;
+using MiniSupermarket.API.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,53 +22,175 @@ namespace MiniSupermarket.API.Controllers {
             _context = context;
         }
 
-        // POST /api/orders/checkout: Xử lý thanh toán đơn hàng tại quầy POS
+        // GET /api/orders: Lấy danh sách hóa đơn kèm chi tiết (Eager Loading Include / ThenInclude)
+        [HttpGet]
+        public async Task<IActionResult> GetAll() {
+            var orders = await _context.Orders
+                .AsNoTracking()
+                .Include(o => o.Customer)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Product)
+                .OrderByDescending(o => o.OrderDate)
+                .Select(o => new OrderResponseDto {
+                    OrderId = o.OrderId,
+                    OrderDate = o.OrderDate,
+                    CashierUsername = o.CashierUsername,
+                    CustomerId = o.CustomerId,
+                    CustomerName = o.Customer != null ? o.Customer.CustomerName : "Khách vãng lai",
+                    TotalAmount = o.TotalAmount,
+                    PaymentMethod = o.PaymentMethod,
+                    Items = o.OrderDetails.Select(od => new OrderDetailResponseDto {
+                        OrderDetailId = od.OrderDetailId,
+                        ProductId = od.ProductId,
+                        ProductName = od.Product != null ? od.Product.ProductName : string.Empty,
+                        Quantity = od.Quantity,
+                        UnitPrice = od.UnitPrice
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return Ok(orders);
+        }
+
+        // POST /api/orders/checkout: Xử lý thanh toán POS kiểm soát toàn vẹn giao dịch chuẩn ACID (SqlTransaction)
         [HttpPost("checkout")]
         public async Task<IActionResult> Checkout([FromBody] CheckoutRequestDto request) {
             if (request == null || request.Items == null || request.Items.Count == 0) {
                 return BadRequest(new { message = "Giỏ hàng không có sản phẩm nào!" });
             }
 
-            decimal totalAmount = 0;
+            // Mở giao dịch chuẩn ACID (Atomicity, Consistency, Isolation, Durability)
+            await using var dbTransaction = await _context.Database.BeginTransactionAsync();
+            try {
+                decimal totalAmount = 0;
+                var sqlConn = (SqlConnection)_context.Database.GetDbConnection();
+                var sqlTran = (SqlTransaction)dbTransaction.GetDbTransaction();
 
-            // 1. Cập nhật tồn kho cho từng sản phẩm
-            foreach (var item in request.Items) {
-                var product = await _context.Products.FindAsync(item.ProductId);
-                if (product != null) {
-                    product.StockQuantity = Math.Max(0, product.StockQuantity - item.Quantity);
+                // 1. Tiêu chí 32, 33, 35: Kiểm tra tồn kho & trừ kho an toàn bằng ADO.NET trong SqlTransaction
+                // Tiêu chí 35: Khi kho hết hàng / không đủ hàng: Tự gọi transaction.Rollback(), không lưu hóa đơn rác vào CSDL
+                foreach (var item in request.Items) {
+                    // Kiểm tra số lượng tồn kho thực tế bằng ADO.NET SqlCommand + AddWithValue + SqlDataReader
+                    const string checkStockSql = "SELECT ProductName, StockQuantity FROM Products WHERE ProductId = @ProductId";
+                    await using var checkCmd = new SqlCommand(checkStockSql, sqlConn, sqlTran);
+                    checkCmd.Parameters.AddWithValue("@ProductId", item.ProductId);
+
+                    await using var reader = await checkCmd.ExecuteReaderAsync();
+                    if (!await reader.ReadAsync()) {
+                        await reader.CloseAsync();
+                        await dbTransaction.RollbackAsync();
+                        return NotFound(new { message = $"Không tìm thấy sản phẩm có ID = {item.ProductId}!" });
+                    }
+
+                    string prodName = reader.GetString(0);
+                    int currentStock = reader.GetInt32(1);
+                    await reader.CloseAsync();
+
+                    // Tiêu chí 35: Kho hết hàng hoặc không đủ số lượng bán -> Rollback ngay lập tức
+                    if (currentStock < item.Quantity) {
+                        await dbTransaction.RollbackAsync();
+                        return BadRequest(new { 
+                            success = false,
+                            message = $"Sản phẩm '{prodName}' trong kho không đủ hàng (Hiện còn: {currentStock}, yêu cầu mua: {item.Quantity})! Giao dịch đã tự động hoàn tác (Rollback), không lưu hóa đơn rác." 
+                        });
+                    }
+
+                    // Trừ tồn kho bằng ADO.NET SqlCommand + AddWithValue chống SQL Injection
+                    const string deductSql = @"
+                        UPDATE Products 
+                        SET StockQuantity = StockQuantity - @Qty 
+                        WHERE ProductId = @ProductId";
+
+                    await using var cmd = new SqlCommand(deductSql, sqlConn, sqlTran);
+                    cmd.Parameters.AddWithValue("@Qty", item.Quantity);
+                    cmd.Parameters.AddWithValue("@ProductId", item.ProductId);
+                    await cmd.ExecuteNonQueryAsync();
+
                     totalAmount += item.Quantity * item.UnitPrice;
                 }
-            }
 
-            // 2. Tích điểm cho khách hàng thân thiết nếu có số điện thoại
-            if (!string.IsNullOrWhiteSpace(request.CustomerPhone)) {
-                var customer = await _context.Customers.FirstOrDefaultAsync(c => c.PhoneNumber == request.CustomerPhone.Trim());
-                if (customer != null) {
-                    int pointsEarned = (int)(totalAmount / 10000); // 10.000 đ = 1 điểm
-                    customer.RewardPoints += pointsEarned;
-                    if (customer.RewardPoints >= 200) customer.MembershipRank = "Bạch Kim";
-                    else if (customer.RewardPoints >= 100) customer.MembershipRank = "Vàng";
-                    else if (customer.RewardPoints >= 30) customer.MembershipRank = "Bạc";
-                    else customer.MembershipRank = "Chuẩn";
+                // 2. Tra cứu, đổi điểm thưởng trừ tiền và tích điểm cho khách hàng thân thiết nếu có số điện thoại (Tiêu chí 47)
+                int? customerId = null;
+                decimal discountAmount = 0;
+                int pointsUsed = 0;
+
+                if (!string.IsNullOrWhiteSpace(request.CustomerPhone)) {
+                    var customer = await _context.Customers
+                        .FirstOrDefaultAsync(c => c.PhoneNumber == request.CustomerPhone.Trim());
+                    if (customer != null) {
+                        customerId = customer.CustomerId;
+
+                        // Tiêu chí 47: Đổi Điểm Thưởng Trừ Tiền Hóa Đơn (Loyalty Points Redemption)
+                        // Nghiệp vụ: Dùng điểm thưởng trừ tiền (1 điểm = 1.000 đ) trong cùng SqlTransaction
+                        if (request.PointsToRedeem > 0) {
+                            pointsUsed = Math.Min(request.PointsToRedeem, customer.RewardPoints);
+                            discountAmount = pointsUsed * 1000m;
+                            if (discountAmount > totalAmount) {
+                                discountAmount = totalAmount;
+                                pointsUsed = (int)(discountAmount / 1000m);
+                            }
+                            customer.RewardPoints -= pointsUsed;
+                        }
+
+                        // Số tiền thực thanh toán sau khi trừ điểm
+                        decimal finalAmount = Math.Max(0, totalAmount - discountAmount);
+
+                        // Tích lũy điểm mới: 10.000 đ = 1 điểm
+                        int pointsEarned = (int)(finalAmount / 10000);
+                        customer.RewardPoints += pointsEarned;
+
+                        // Tự động nâng hạng thành viên
+                        if (customer.RewardPoints >= 200) customer.MembershipRank = "Bạch Kim";
+                        else if (customer.RewardPoints >= 100) customer.MembershipRank = "Vàng";
+                        else if (customer.RewardPoints >= 30) customer.MembershipRank = "Bạc";
+                        else customer.MembershipRank = "Chuẩn";
+
+                        totalAmount = finalAmount;
+                    }
                 }
+
+                // 3. Lưu Hóa đơn (Order) và Chi tiết hóa đơn (OrderDetails) vào SQL Server
+                var newOrder = new Order {
+                    OrderDate = DateTime.Now,
+                    CashierUsername = string.IsNullOrWhiteSpace(request.CashierUsername) ? "cashier01" : request.CashierUsername,
+                    CustomerId = customerId,
+                    TotalAmount = totalAmount,
+                    PaymentMethod = "Tiền mặt",
+                    OrderDetails = request.Items.Select(i => new OrderDetail {
+                        ProductId = i.ProductId,
+                        Quantity = i.Quantity,
+                        UnitPrice = i.UnitPrice
+                    }).ToList()
+                };
+
+                _context.Orders.Add(newOrder);
+                await _context.SaveChangesAsync();
+
+                // 4. Xác nhận hoàn tất giao dịch (Commit Transaction)
+                await dbTransaction.CommitAsync();
+
+                return Ok(new {
+                    success = true,
+                    message = pointsUsed > 0 
+                        ? $"Thanh toán thành công! Đã đổi {pointsUsed} điểm thưởng (trừ {discountAmount:N0} đ), lưu hóa đơn và trừ kho chuẩn ACID!" 
+                        : "Thanh toán thành công, đã lưu hóa đơn và trừ tồn kho chuẩn ACID!",
+                    orderId = newOrder.OrderId,
+                    totalAmount = totalAmount,
+                    discountAmount = discountAmount,
+                    pointsUsed = pointsUsed,
+                    cashier = newOrder.CashierUsername,
+                    createdAt = newOrder.OrderDate
+                });
+            } catch (Exception ex) {
+                await dbTransaction.RollbackAsync();
+                return BadRequest(new { success = false, message = "Giao dịch thất bại, đã hoàn tác (Rollback): " + ex.Message });
             }
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new {
-                success = true,
-                message = "Thanh toán thành công và đã trừ tồn kho!",
-                orderId = new Random().Next(1000, 9999),
-                totalAmount = totalAmount,
-                cashier = request.CashierUsername,
-                createdAt = DateTime.Now
-            });
         }
     }
 
     public class CheckoutRequestDto {
         public string CashierUsername { get; set; } = string.Empty;
         public string? CustomerPhone { get; set; }
+        public int PointsToRedeem { get; set; } = 0; // Tiêu chí 47: Đổi điểm thưởng trừ tiền
         public List<CheckoutItemDto> Items { get; set; } = new();
     }
 

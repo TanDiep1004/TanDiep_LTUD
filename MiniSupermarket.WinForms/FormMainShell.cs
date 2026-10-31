@@ -9,6 +9,13 @@ namespace MiniSupermarket.WinForms {
 
         public FormMainShell() {
             InitializeComponent();
+            this.KeyPreview = true;
+            this.KeyDown += (s, ev) => {
+                if (ev.KeyCode == Keys.F2 && btnCategory.Visible) { btnCategory_Click(this, EventArgs.Empty); }
+                else if (ev.KeyCode == Keys.F3 && btnProduct.Visible) { btnProduct_Click(this, EventArgs.Empty); }
+                else if (ev.KeyCode == Keys.F4 && btnCustomer.Visible) { btnCustomer_Click(this, EventArgs.Empty); }
+                else if (ev.KeyCode == Keys.F5 && btnReports.Visible) { btnReports_Click(this, EventArgs.Empty); }
+            };
         }
 
         private void FormMainShell_Load(object sender, EventArgs e) {
@@ -218,13 +225,13 @@ namespace MiniSupermarket.WinForms {
         private void OpenDefaultScreenByRole(string role) {
             switch (role.ToUpper()) {
                 case "ADMIN":
-                    OpenChildForm(new FormCategoryManagement(), "QUẢN LÝ DANH MỤC NHÓM HÀNG", btnCategory);
+                    OpenChildForm(new FormCategoryManagement(), "QUẢN LÝ KHO & NHẬP HÀNG (Inventory & Warehouse)", btnCategory);
                     break;
                 case "CASHIER":
                     OpenChildForm(new FormPOS(), "HỆ THỐNG QUẦY BÁN HÀNG & THU NGÂN (POS)", btnPOS);
                     break;
                 case "WAREHOUSE":
-                    OpenChildForm(new FormProductManagement(), "QUẢN LÝ THÔNG TIN SẢN PHẨM & KHO HÀNG", btnProduct);
+                    OpenChildForm(new FormProductManagement(), "DANH MỤC SẢN PHẨM & GIÁ", btnProduct);
                     break;
             }
         }
@@ -237,7 +244,7 @@ namespace MiniSupermarket.WinForms {
                 MessageBox.Show("Nhân viên thu ngân không có quyền truy cập quản lý nhóm hàng!", "Từ chối truy cập", MessageBoxButtons.OK, MessageBoxIcon.Stop);
                 return;
             }
-            OpenChildForm(new FormCategoryManagement(), "QUẢN LÝ DANH MỤC NHÓM HÀNG", btnCategory);
+            OpenChildForm(new FormCategoryManagement(), "QUẢN LÝ KHO & NHẬP HÀNG (Inventory & Warehouse)", btnCategory);
         }
 
         // 2. Bán hàng POS (Admin & Cashier)
@@ -255,7 +262,7 @@ namespace MiniSupermarket.WinForms {
                 MessageBox.Show("Nhân viên thu ngân không có quyền truy cập quản lý sản phẩm!", "Từ chối truy cập", MessageBoxButtons.OK, MessageBoxIcon.Stop);
                 return;
             }
-            OpenChildForm(new FormProductManagement(), "QUẢN LÝ THÔNG TIN SẢN PHẨM & KHO HÀNG", btnProduct);
+            OpenChildForm(new FormProductManagement(), "DANH MỤC SẢN PHẨM & GIÁ", btnProduct);
         }
 
         // 4. Quản lý Khách hàng (Admin & Cashier)
@@ -273,7 +280,7 @@ namespace MiniSupermarket.WinForms {
                 MessageBox.Show("Bạn không có quyền xem dữ liệu tài chính của siêu thị!", "Từ chối truy cập", MessageBoxButtons.OK, MessageBoxIcon.Stop);
                 return;
             }
-            OpenChildForm(new FormQuickReport(), "BÁO CÁO DOANH THU & HIỆU SUẤT CA BÁN", btnReports);
+            OpenChildForm(new FormQuickReport(), "BÁO CÁO & THỐNG KÊ DOANH THU", btnReports);
         }
 
         // 6. Quản trị Tài khoản Người dùng (Chỉ Admin - Cơ chế bảo vệ 2 lớp)
@@ -282,7 +289,7 @@ namespace MiniSupermarket.WinForms {
                 MessageBox.Show("Bạn không có quyền quản trị tài khoản hệ thống!", "Từ chối truy cập", MessageBoxButtons.OK, MessageBoxIcon.Stop);
                 return;
             }
-            OpenChildForm(new FormUserManagement(), "QUẢN TRỊ TÀI KHOẢN VÀ PHÂN QUYỀN HỆ THỐNG", btnUserManage);
+            OpenChildForm(new FormUserManagement(), "PHÂN QUYỀN VÀ CÀI ĐẶT ĐƠN GIẢN", btnUserManage);
         }
 
         // 7. Đăng xuất khỏi hệ thống

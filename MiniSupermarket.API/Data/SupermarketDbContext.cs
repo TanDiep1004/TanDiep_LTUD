@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using MiniSupermarket.API.Models;
 
@@ -6,15 +7,42 @@ namespace MiniSupermarket.API.Data {
     public class SupermarketDbContext : DbContext {
         public SupermarketDbContext(DbContextOptions<SupermarketDbContext> options) : base(options) { }
 
-        // Khai báo các bảng dữ liệu ánh xạ từ Model
+        // Khai báo đủ 6 bảng dữ liệu ánh xạ từ Model (Entity)
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Customer> Customers { get; set; }
         public DbSet<UserAccount> UserAccounts { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderDetail> OrderDetails { get; set; }
 
-        // Cấu hình dữ liệu mồi ban đầu (Data Seeding)
+        // Cấu hình Fluent API, Khóa ngoại (1-N) và Dữ liệu mồi ban đầu (Data Seeding)
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             base.OnModelCreating(modelBuilder);
+
+            // 1. Cấu hình Fluent API cho các mối quan hệ 1-N và ràng buộc Unique
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Category)
+                .WithMany(c => c.Products)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Customer)
+                .WithMany(c => c.Orders)
+                .HasForeignKey(o => o.CustomerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<OrderDetail>()
+                .HasOne(od => od.Order)
+                .WithMany(o => o.OrderDetails)
+                .HasForeignKey(od => od.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<OrderDetail>()
+                .HasOne(od => od.Product)
+                .WithMany(p => p.OrderDetails)
+                .HasForeignKey(od => od.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Nạp sẵn 15 danh mục chuẩn vào SQL Server
             modelBuilder.Entity<Category>().HasData(
@@ -42,7 +70,7 @@ namespace MiniSupermarket.API.Data {
                 new Customer { CustomerId = 3, CustomerName = "Lê Văn C", PhoneNumber = "0983344556", MembershipRank = "Chuẩn", RewardPoints = 10, Address = "Đà Nẵng" }
             );
 
-            // Nạp sẵn 15 sản phẩm mẫu vào SQL Server
+            // Nạp sẵn 30 sản phẩm mẫu vào SQL Server
             modelBuilder.Entity<Product>().HasData(
                 new Product { ProductId = 1, Barcode = "8936036010015", ProductName = "Snack khoai tây Lay's tự nhiên 56g", Price = 12000, StockQuantity = 100, CategoryId = 1 },
                 new Product { ProductId = 2, Barcode = "8936036010022", ProductName = "Bánh ChocoPie Orion hộp 12 cái 360g", Price = 55000, StockQuantity = 50, CategoryId = 1 },
@@ -97,6 +125,25 @@ namespace MiniSupermarket.API.Data {
                 new UserAccount { Id = 16, Username = "admin", Password = "123456", FullName = "Admin Quản Trị", Role = "Admin", IsActive = true },
                 new UserAccount { Id = 17, Username = "cashier", Password = "123456", FullName = "Thu Ngân POS", Role = "Cashier", IsActive = true },
                 new UserAccount { Id = 18, Username = "hhh", Password = "123456", FullName = "van an", Role = "Admin", IsActive = true }
+            );
+
+            // Nạp sẵn 5 hóa đơn mẫu và chi tiết hóa đơn vào SQL Server
+            modelBuilder.Entity<Order>().HasData(
+                new Order { OrderId = 1, OrderDate = new DateTime(2026, 10, 24, 8, 15, 0), CashierUsername = "cashier01", CustomerId = 1, TotalAmount = 155000m, PaymentMethod = "Tiền mặt" },
+                new Order { OrderId = 2, OrderDate = new DateTime(2026, 10, 24, 9, 30, 0), CashierUsername = "cashier01", CustomerId = null, TotalAmount = 42000m, PaymentMethod = "Tiền mặt" },
+                new Order { OrderId = 3, OrderDate = new DateTime(2026, 10, 24, 10, 45, 0), CashierUsername = "cashier02", CustomerId = 2, TotalAmount = 230000m, PaymentMethod = "Chuyển khoản" },
+                new Order { OrderId = 4, OrderDate = new DateTime(2026, 10, 24, 14, 10, 0), CashierUsername = "cashier03", CustomerId = 3, TotalAmount = 370000m, PaymentMethod = "Tiền mặt" },
+                new Order { OrderId = 5, OrderDate = new DateTime(2026, 10, 24, 16, 40, 0), CashierUsername = "cashier05", CustomerId = 1, TotalAmount = 330000m, PaymentMethod = "Tiền mặt" }
+            );
+
+            modelBuilder.Entity<OrderDetail>().HasData(
+                new OrderDetail { OrderDetailId = 1, OrderId = 1, ProductId = 2, Quantity = 2, UnitPrice = 55000m },
+                new OrderDetail { OrderDetailId = 2, OrderId = 1, ProductId = 10, Quantity = 10, UnitPrice = 4500m },
+                new OrderDetail { OrderDetailId = 3, OrderId = 2, ProductId = 9, Quantity = 1, UnitPrice = 42000m },
+                new OrderDetail { OrderDetailId = 4, OrderId = 3, ProductId = 16, Quantity = 1, UnitPrice = 125000m },
+                new OrderDetail { OrderDetailId = 5, OrderId = 3, ProductId = 7, Quantity = 3, UnitPrice = 35000m },
+                new OrderDetail { OrderDetailId = 6, OrderId = 4, ProductId = 21, Quantity = 2, UnitPrice = 185000m },
+                new OrderDetail { OrderDetailId = 7, OrderId = 5, ProductId = 26, Quantity = 2, UnitPrice = 165000m }
             );
         }
     }
